@@ -1,98 +1,279 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Ops Hub
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A comprehensive operations management platform built with NestJS, featuring project management, task tracking, file handling, and webhook integrations.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🚀 Features
 
-## Description
+- **Project Management**: Create and manage projects with team members
+- **Task Tracking**: Comprehensive task management with priorities and due dates
+- **File Management**: Upload and organize files with proper validation
+- **User Authentication**: JWT-based authentication with refresh tokens
+- **Role-based Access Control**: Fine-grained permissions system
+- **Webhook Integration**: Support for external webhook integrations
+- **GraphQL & REST APIs**: Dual API support for maximum flexibility
+- **Real-time Updates**: WebSocket support for live updates
+- **Queue Management**: Background job processing with BullMQ
+- **Caching**: Redis-based caching for improved performance
+- **Health Checks**: Comprehensive monitoring and health endpoints
+- **Logging**: Structured logging with Pino
+- **Docker Support**: Full containerization with Docker Compose
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🏗️ Architecture
 
-## Project setup
-
-```bash
-$ npm install
+```
+ops-hub/
+├─ docker-compose.yml
+├─ prisma/
+│  ├─ schema.prisma
+│  └─ seed.ts
+├─ src/
+│  ├─ main.ts
+│  ├─ app.module.ts
+│  ├─ config/            # Dynamic module + schema validation
+│  ├─ common/
+│  │  ├─ middleware/     # request-logger, request-id
+│  │  ├─ filters/        # AllExceptionsFilter, HttpExceptionFilter
+│  │  ├─ pipes/          # ValidationPipe config, custom pipes
+│  │  ├─ guards/         # JwtAuthGuard, RolesGuard
+│  │  ├─ interceptors/   # Logging, Transform, Timeout, Cache
+│  │  ├─ decorators/     # @Roles, @Public, etc.
+│  │  └─ utils/
+│  ├─ database/          # PrismaService, DatabaseModule (dynamic)
+│  ├─ auth/              # JWT, refresh, OAuth2 (optional)
+│  ├─ users/
+│  ├─ projects/
+│  ├─ tasks/
+│  ├─ files/
+│  ├─ webhooks/
+│  ├─ queue/             # BullMQ Module, processors
+│  ├─ gql/               # GQL module (code-first), resolvers, DTOs
+│  ├─ rest/              # REST controllers, DTOs
+│  ├─ cache/             # CacheModule wrapper (redis)
+│  ├─ logging/           # nestjs-pino setup
+│  └─ metrics/           # healthchecks, /metrics, readiness/liveness
+└─ tsconfig.json
 ```
 
-## Compile and run the project
+## 🛠️ Tech Stack
+
+- **Framework**: NestJS
+- **Database**: PostgreSQL with Prisma ORM
+- **Cache**: Redis
+- **Queue**: BullMQ
+- **Authentication**: JWT with Passport
+- **API**: GraphQL (Apollo) + REST
+- **Logging**: Pino
+- **Validation**: class-validator + class-transformer
+- **Documentation**: Swagger/OpenAPI
+- **Testing**: Jest
+- **Containerization**: Docker + Docker Compose
+
+## 📋 Prerequisites
+
+- Node.js 18+
+- Docker and Docker Compose
+- PostgreSQL (or use Docker)
+- Redis (or use Docker)
+
+## 🚀 Quick Start
+
+### 1. Clone and Install
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone <repository-url>
+cd ops-hub
+npm install
 ```
 
-## Run tests
+### 2. Environment Setup
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
+# Edit .env with your configuration
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 3. Start Database Services
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run docker:up
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 4. Setup Database
 
-## Resources
+```bash
+# Generate Prisma client
+npm run db:generate
 
-Check out a few resources that may come in handy when working with NestJS:
+# Push database schema
+npm run db:push
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Seed database with initial data
+npm run db:seed
+```
 
-## Support
+### 5. Start Development Server
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npm run start:dev
+```
 
-## Stay in touch
+The application will be available at:
+- API: http://localhost:3000/api
+- Health: http://localhost:3000/health
+- Metrics: http://localhost:3000/metrics
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 📝 Available Scripts
 
-## License
+### Development
+```bash
+npm run start:dev      # Start development server with hot reload
+npm run start:debug    # Start with debug mode
+npm run build          # Build for production
+npm run start:prod     # Start production server
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### Database
+```bash
+npm run db:generate    # Generate Prisma client
+npm run db:push        # Push schema to database
+npm run db:migrate     # Create and run migrations
+npm run db:seed        # Seed database with test data
+npm run db:studio      # Open Prisma Studio
+```
+
+### Docker
+```bash
+npm run docker:up      # Start all services
+npm run docker:down    # Stop all services
+npm run docker:logs    # View logs
+```
+
+### Testing
+```bash
+npm run test           # Run unit tests
+npm run test:watch     # Run tests in watch mode
+npm run test:cov       # Run tests with coverage
+npm run test:e2e       # Run end-to-end tests
+```
+
+### Code Quality
+```bash
+npm run lint           # Run ESLint
+npm run format         # Format code with Prettier
+```
+
+## 🔑 API Authentication
+
+The API uses JWT tokens for authentication. To access protected endpoints:
+
+1. **Login** to get tokens:
+```bash
+POST /api/auth/login
+{
+  "email": "admin@opshub.com",
+  "password": "password"
+}
+```
+
+2. **Use the access token** in subsequent requests:
+```bash
+Authorization: Bearer <access_token>
+```
+
+3. **Refresh tokens** when expired:
+```bash
+POST /api/auth/refresh
+{
+  "refreshToken": "<refresh_token>"
+}
+```
+
+## 🏥 Health Checks
+
+The application provides several health check endpoints:
+
+- `GET /health` - Comprehensive health check including database
+- `GET /health/ready` - Readiness probe for Kubernetes
+- `GET /health/live` - Liveness probe for Kubernetes
+
+## 📊 Monitoring
+
+- **Metrics**: Available at `/metrics` endpoint
+- **Logs**: Structured JSON logs with correlation IDs
+- **Tracing**: Request tracing with unique request IDs
+
+## 🐳 Docker Deployment
+
+### Development with Docker Compose
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+
+# Stop services
+docker-compose down
+```
+
+### Production Deployment
+
+```bash
+# Build production image
+docker build -t ops-hub:latest .
+
+# Run with environment variables
+docker run -d \
+  --name ops-hub \
+  -p 3000:3000 \
+  -e DATABASE_URL="postgresql://..." \
+  -e REDIS_URL="redis://..." \
+  ops-hub:latest
+```
+
+## 🔧 Configuration
+
+Key environment variables:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NODE_ENV` | Environment mode | `development` |
+| `PORT` | Application port | `3000` |
+| `DATABASE_URL` | PostgreSQL connection string | Required |
+| `REDIS_URL` | Redis connection string | Optional |
+| `JWT_SECRET` | JWT signing secret | Required |
+| `JWT_EXPIRATION_TIME` | Access token expiry (seconds) | `3600` |
+| `UPLOAD_PATH` | File upload directory | `./uploads` |
+| `MAX_FILE_SIZE` | Max file size in bytes | `10485760` |
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+## 🆘 Support
+
+For support and questions:
+
+- Create an [Issue](../../issues)
+- Check [Documentation](docs/)
+- Contact the development team
+
+## 🗺️ Roadmap
+
+- [ ] OAuth2 integration (Google, GitHub)
+- [ ] WebSocket real-time updates
+- [ ] Advanced file processing
+- [ ] Notification system
+- [ ] Advanced analytics dashboard
+- [ ] Mobile app support
+- [ ] Plugin system
+- [ ] Advanced workflow automation
