@@ -6,6 +6,7 @@ import { LoggingInterceptor, TransformInterceptor, TimeoutInterceptor } from './
 import { AppConfigService } from './config';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
 
@@ -17,9 +18,18 @@ async function bootstrap() {
   const logger = app.get(Logger);
   app.useLogger(logger);
 
+  // Centralized configuration service
+  // Provides access to environment variables and app settings
   const configService = app.get(AppConfigService);
 
   // Global pipes
+  // ValidationPipe: automatically validates incoming requests based on DTOs
+  // Activate all class-based validation decorators (e.g., @IsString, @IsInt)
+  // whitelist: true - strips properties that do not have any decorators
+  // forbidNonWhitelisted: true - throws an error if non-decorated properties are present
+  // transform: true - automatically transforms payloads to be objects typed according to their DTO classes
+  // e.g., if age is defined as number in DTO, it will be converted from string to number
+  // This ensures type safety in your controllers and services
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
@@ -27,13 +37,14 @@ async function bootstrap() {
   }));
 
   // Global filters
+  // global error handler that catches all unhandled exceptions throughout your entire application and formats them into consistent error responses.
   app.useGlobalFilters(new AllExceptionsFilter());
 
   // Global interceptors
   app.useGlobalInterceptors(
-    new LoggingInterceptor(),
-    new TransformInterceptor(),
-    new TimeoutInterceptor(),
+    new LoggingInterceptor(logger),  // log html requests and responses
+    new TransformInterceptor(),  // standardize response format
+    new TimeoutInterceptor(),  // timeout long requests
   );
 
   // Security middleware
@@ -54,6 +65,15 @@ async function bootstrap() {
   app.setGlobalPrefix('api', {
     exclude: ['/health', '/metrics'],
   });
+
+  const config = new DocumentBuilder()
+    .setTitle('OpsHub API')
+    .setDescription('REST + GraphQL backend with Prisma, Redis, BullMQ')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const doc = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, doc); 
 
   const port = configService.port;
   await app.listen(port);
