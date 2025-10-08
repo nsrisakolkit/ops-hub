@@ -46,10 +46,18 @@ export class EnvironmentVariables {
   MAX_FILE_SIZE?: number = 10485760; // 10MB
 }
 
+// Record<string, unknown> means an object with string keys and values of any type.\
+// Record<> is a plain JavaScript object with TypeScript type checking.
 export function validate(config: Record<string, unknown>) {
+  // Transform plain object to class instance and validate. (but didn't activate class-validator)
   const validatedConfig = plainToInstance(EnvironmentVariables, config, {
-    enableImplicitConversion: true,
+    enableImplicitConversion: true,   // Automatically convert compatible types
   });
+
+  // Now activate class-validator to validate the instance
+  // skipMissingProperties: false ensures all required properties are present
+  // If any validation errors, throw an error
+  // This prevents the app from starting with invalid config
   const errors = validateSync(validatedConfig, {
     skipMissingProperties: false,
   });
@@ -60,10 +68,12 @@ export function validate(config: Record<string, unknown>) {
   return validatedConfig;
 }
 
+// Centralized access to configuration with type safety
 @Injectable()
 export class AppConfigService {
   constructor(private configService: ConfigService<EnvironmentVariables>) {}
-
+  
+  // infer: true: Tells TypeScript to use the types from EnvironmentVariables
   get nodeEnv(): string {
     return this.configService.get('NODE_ENV', { infer: true })!;
   }

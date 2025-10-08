@@ -7,6 +7,8 @@ import { AppConfigService, validate } from './app-config.service';
     ConfigModule.forRoot({
       isGlobal: true,
       validate,
+      // The .env.local file provides environment-specific overrides and follows a common configuration hierarchy pattern. 
+      // It is loaded first to allow local settings to override shared defaults in .env.
       envFilePath: ['.env.local', '.env'],
     }),
   ],
