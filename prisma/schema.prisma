@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -23,12 +20,18 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
+
+  // show projects that user is a member
+  // no relation needed because it is automatically implied
   projects    ProjectMember[]
   tasks       Task[]
   files       File[]
   webhooks    Webhook[]
+
+  // need relation because User has more than one relation to Task
   assignedTasks Task[] @relation("TaskAssignee")
 
+  // map User schema to "users" table
   @@map("users")
 }
 
@@ -55,6 +58,8 @@ model ProjectMember {
 
   // Relations
   userId    String
+
+  // "onDelete: Cascade" means delete record when User is deleted
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)

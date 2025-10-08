@@ -11,6 +11,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.$disconnect();
   }
 
+  // Utility method to clean the database, useful for testing
   async cleanDatabase() {
     if (process.env.NODE_ENV === 'production') return;
     
