@@ -14,6 +14,7 @@ export class TimeoutInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
+      // The timeout() operator starts a timer when the Observable begins and cancels the operation if it doesn't complete within the specified time.
       timeout(this.timeoutMs),
       catchError((err) => {
         if (err instanceof TimeoutError) {
