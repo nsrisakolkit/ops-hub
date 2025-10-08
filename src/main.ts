@@ -1,13 +1,22 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters';
 import { LoggingInterceptor, TransformInterceptor, TimeoutInterceptor } from './common/interceptors';
 import { AppConfigService } from './config';
+import { Logger } from 'nestjs-pino';
+import helmet from 'helmet';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  const logger = new Logger('Bootstrap');
+
+  // Logs are held in memory until you set up your custom logger, then they're all released at once.
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+
+  // Set up custom logger
+  // Get Pino logger from DI container
+  const logger = app.get(Logger);
+  app.useLogger(logger);
+
   const configService = app.get(AppConfigService);
 
   // Global pipes
@@ -27,14 +36,21 @@ async function bootstrap() {
     new TimeoutInterceptor(),
   );
 
+  // Security middleware
+  app.use(helmet());
+
   // CORS
+  // Allow requests from any origin in development, restrict in production
   app.enableCors({
-    origin: true,
+    origin: configService.isDevelopment 
+      ? true 
+      : process.env.ALLOWED_ORIGINS?.split(',') || false,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
 
   // Global prefix
+  // Apply 'api' prefix to all routes except /health and /metrics
   app.setGlobalPrefix('api', {
     exclude: ['/health', '/metrics'],
   });

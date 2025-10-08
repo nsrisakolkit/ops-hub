@@ -17,6 +17,7 @@ import { MetricsModule } from './metrics';
 // Common
 import { RequestLoggerMiddleware, RequestIdMiddleware } from './common/middleware';
 import { JwtAuthGuard, RolesGuard } from './common/guards';
+import { LoggingModule } from './logging/logging.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { JwtAuthGuard, RolesGuard } from './common/guards';
     ProjectsModule,
     TasksModule,
     MetricsModule,
+    LoggingModule,
   ],
   controllers: [AppController],
   providers: [
