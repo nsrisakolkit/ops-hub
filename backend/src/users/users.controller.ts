@@ -8,10 +8,14 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService, CreateUserDto, UpdateUserDto } from './users.service';
+import { UsersService } from './users.service';
+import { CreateUserDto, UpdateUserDto } from './users.dto';
 import { JwtAuthGuard, RolesGuard } from '../common/guards';
 import { Roles, CurrentUser } from '../common/decorators';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('users')
+@ApiBearerAuth()
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {

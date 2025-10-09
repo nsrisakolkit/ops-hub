@@ -2,19 +2,23 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } f
 import { TasksService } from './tasks.service';
 import { JwtAuthGuard } from '../common/guards';
 import { CurrentUser } from '../common/decorators';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { CreateTaskDto, UpdateTaskDto, TaskQueryDto } from './tasks.dto';
 
+@ApiTags('tasks')
+@ApiBearerAuth()
 @Controller('tasks')
 @UseGuards(JwtAuthGuard)
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  create(@Body() createTaskDto: any, @CurrentUser('sub') userId: string) {
+  create(@Body() createTaskDto: CreateTaskDto, @CurrentUser('sub') userId: string) {
     return this.tasksService.create({ ...createTaskDto, creatorId: userId });
   }
 
   @Get()
-  findAll(@Query() query: any) {
+  findAll(@Query() query: TaskQueryDto) {
     return this.tasksService.findAll(query);
   }
 
@@ -24,7 +28,7 @@ export class TasksController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTaskDto: any) {
+  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
     return this.tasksService.update(id, updateTaskDto);
   }
 

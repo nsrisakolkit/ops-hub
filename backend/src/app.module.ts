@@ -18,6 +18,7 @@ import { MetricsModule } from './metrics';
 import { RequestLoggerMiddleware, RequestIdMiddleware } from './common/middleware';
 import { JwtAuthGuard, RolesGuard } from './common/guards';
 import { LoggingModule } from './logging/logging.module';
+import { CacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { LoggingModule } from './logging/logging.module';
     TasksModule,
     MetricsModule,
     LoggingModule,
+    CacheModule,
   ],
   controllers: [AppController],
   providers: [
