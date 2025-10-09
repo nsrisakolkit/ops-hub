@@ -7,8 +7,15 @@ import {
   MaxLength,
   Matches,
   IsIn,
+  IsEnum,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+
+export enum UserRole {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+}
 
 export class CreateUserDto {
   @IsEmail({}, { message: 'Please provide a valid email address' })
@@ -40,10 +47,10 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString({ message: 'Role must be a string' })
-  @IsIn(['USER', 'ADMIN', 'SUPER_ADMIN'], {
+  @IsEnum(UserRole, {
     message: 'Role must be one of: USER, ADMIN, SUPER_ADMIN',
   })
-  role?: string;
+  role?: UserRole;
 }
 
 export class UpdateUserDto {
