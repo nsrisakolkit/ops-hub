@@ -1,5 +1,4 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -16,7 +15,6 @@ import { MetricsModule } from './metrics';
 
 // Common
 import { RequestLoggerMiddleware, RequestIdMiddleware } from './common/middleware';
-import { JwtAuthGuard, RolesGuard } from './common/guards';
 import { LoggingModule } from './logging/logging.module';
 import { CacheModule } from './cache/cache.module';
 
@@ -38,14 +36,6 @@ import { CacheModule } from './cache/cache.module';
   controllers: [AppController],
   providers: [
     AppService,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
   ],
 })
 export class AppModule implements NestModule {
