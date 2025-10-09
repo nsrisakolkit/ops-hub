@@ -24,7 +24,7 @@ import { CacheModule } from './cache/cache.module';
   imports: [
     // Core modules
     AppConfigModule,
-    DatabaseModule,
+    DatabaseModule.forRoot(),
     
     // Feature modules
     AuthModule,
@@ -33,7 +33,7 @@ import { CacheModule } from './cache/cache.module';
     TasksModule,
     MetricsModule,
     LoggingModule,
-    CacheModule,
+    CacheModule.forRootAsync(),
   ],
   controllers: [AppController],
   providers: [

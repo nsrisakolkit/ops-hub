@@ -3,45 +3,20 @@ import {
   IsOptional,
   IsEnum,
   IsUUID,
-  IsDate,
-  IsUrl,
-  IsArray,
-  IsNumber,
-  IsBoolean,
   MinLength,
   MaxLength,
+  IsNumber,
+  IsBoolean,
   Min,
   Max,
-  ValidateNested,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-
-export enum ProjectStatus {
-  PLANNING = 'PLANNING',
-  ACTIVE = 'ACTIVE',
-  ON_HOLD = 'ON_HOLD',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  ARCHIVED = 'ARCHIVED',
-}
-
-export enum ProjectPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL',
-}
-
-export enum ProjectVisibility {
-  PUBLIC = 'PUBLIC',
-  PRIVATE = 'PRIVATE',
-  TEAM = 'TEAM',
-}
+import { ProjectStatus, ProjectRole } from '@prisma/client';
 
 export class CreateProjectDto {
   @IsString({ message: 'Name must be a string' })
   @MinLength(1, { message: 'Name cannot be empty' })
-  @MaxLength(100, { message: 'Name must not exceed 100 characters' })
+  @MaxLength(200, { message: 'Name must not exceed 200 characters' })
   @Transform(({ value }) => value?.trim())
   name: string;
 
@@ -53,101 +28,21 @@ export class CreateProjectDto {
 
   @IsOptional()
   @IsEnum(ProjectStatus, {
-    message: 'Status must be one of: PLANNING, ACTIVE, ON_HOLD, COMPLETED, CANCELLED, ARCHIVED',
+    message: `Status must be one of: ${Object.values(ProjectStatus).join(', ')}`,
   })
   status?: ProjectStatus;
 
+  // Note: creatorId will be set by the controller from authenticated user
   @IsOptional()
-  @IsEnum(ProjectPriority, {
-    message: 'Priority must be one of: LOW, MEDIUM, HIGH, CRITICAL',
-  })
-  priority?: ProjectPriority;
-
-  @IsOptional()
-  @IsEnum(ProjectVisibility, {
-    message: 'Visibility must be one of: PUBLIC, PRIVATE, TEAM',
-  })
-  visibility?: ProjectVisibility;
-
-  @IsOptional()
-  @Type(() => Date)
-  @IsDate({ message: 'Start date must be a valid date' })
-  @Transform(({ value }) => value ? new Date(value) : undefined)
-  startDate?: Date;
-
-  @IsOptional()
-  @Type(() => Date)
-  @IsDate({ message: 'End date must be a valid date' })
-  @Transform(({ value }) => value ? new Date(value) : undefined)
-  endDate?: Date;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'Budget must be a number' })
-  @Min(0, { message: 'Budget must be at least 0' })
-  @Max(10000000, { message: 'Budget must not exceed 10,000,000' })
-  budget?: number;
-
-  @IsOptional()
-  @IsString({ message: 'Currency must be a string' })
-  @MinLength(3, { message: 'Currency must be at least 3 characters (e.g., USD)' })
-  @MaxLength(3, { message: 'Currency must be exactly 3 characters (e.g., USD)' })
-  @Transform(({ value }) => value?.toUpperCase())
-  currency?: string;
-
-  @IsOptional()
-  @IsUUID(4, { message: 'Owner ID must be a valid UUID' })
-  ownerId?: string;
-
-  @IsOptional()
-  @IsArray({ message: 'Team member IDs must be an array' })
-  @IsUUID(4, { each: true, message: 'Each team member ID must be a valid UUID' })
-  teamMemberIds?: string[];
-
-  @IsOptional()
-  @IsArray({ message: 'Tags must be an array' })
-  @IsString({ each: true, message: 'Each tag must be a string' })
-  @MaxLength(50, { each: true, message: 'Each tag must not exceed 50 characters' })
-  @Transform(({ value }) => 
-    Array.isArray(value) 
-      ? value.map(tag => typeof tag === 'string' ? tag.trim().toLowerCase() : tag)
-      : value
-  )
-  tags?: string[];
-
-  @IsOptional()
-  @IsUrl({}, { message: 'Repository URL must be a valid URL' })
-  @Transform(({ value }) => value?.trim())
-  repositoryUrl?: string;
-
-  @IsOptional()
-  @IsUrl({}, { message: 'Documentation URL must be a valid URL' })
-  @Transform(({ value }) => value?.trim())
-  documentationUrl?: string;
-
-  @IsOptional()
-  @IsString({ message: 'Client name must be a string' })
-  @MaxLength(100, { message: 'Client name must not exceed 100 characters' })
-  @Transform(({ value }) => value?.trim())
-  clientName?: string;
-
-  @IsOptional()
-  @IsString({ message: 'Department must be a string' })
-  @MaxLength(100, { message: 'Department must not exceed 100 characters' })
-  @Transform(({ value }) => value?.trim())
-  department?: string;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'Estimated hours must be a number' })
-  @Min(1, { message: 'Estimated hours must be at least 1' })
-  @Max(100000, { message: 'Estimated hours must not exceed 100,000' })
-  estimatedHours?: number;
+  @IsUUID(4, { message: 'Creator ID must be a valid UUID' })
+  creatorId?: string;
 }
 
 export class UpdateProjectDto {
   @IsOptional()
   @IsString({ message: 'Name must be a string' })
   @MinLength(1, { message: 'Name cannot be empty' })
-  @MaxLength(100, { message: 'Name must not exceed 100 characters' })
+  @MaxLength(200, { message: 'Name must not exceed 200 characters' })
   @Transform(({ value }) => value?.trim())
   name?: string;
 
@@ -159,134 +54,17 @@ export class UpdateProjectDto {
 
   @IsOptional()
   @IsEnum(ProjectStatus, {
-    message: 'Status must be one of: PLANNING, ACTIVE, ON_HOLD, COMPLETED, CANCELLED, ARCHIVED',
+    message: `Status must be one of: ${Object.values(ProjectStatus).join(', ')}`,
   })
   status?: ProjectStatus;
-
-  @IsOptional()
-  @IsEnum(ProjectPriority, {
-    message: 'Priority must be one of: LOW, MEDIUM, HIGH, CRITICAL',
-  })
-  priority?: ProjectPriority;
-
-  @IsOptional()
-  @IsEnum(ProjectVisibility, {
-    message: 'Visibility must be one of: PUBLIC, PRIVATE, TEAM',
-  })
-  visibility?: ProjectVisibility;
-
-  @IsOptional()
-  @Type(() => Date)
-  @IsDate({ message: 'Start date must be a valid date' })
-  @Transform(({ value }) => value ? new Date(value) : undefined)
-  startDate?: Date;
-
-  @IsOptional()
-  @Type(() => Date)
-  @IsDate({ message: 'End date must be a valid date' })
-  @Transform(({ value }) => value ? new Date(value) : undefined)
-  endDate?: Date;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'Budget must be a number' })
-  @Min(0, { message: 'Budget must be at least 0' })
-  @Max(10000000, { message: 'Budget must not exceed 10,000,000' })
-  budget?: number;
-
-  @IsOptional()
-  @IsString({ message: 'Currency must be a string' })
-  @MinLength(3, { message: 'Currency must be at least 3 characters (e.g., USD)' })
-  @MaxLength(3, { message: 'Currency must be exactly 3 characters (e.g., USD)' })
-  @Transform(({ value }) => value?.toUpperCase())
-  currency?: string;
-
-  @IsOptional()
-  @IsUUID(4, { message: 'Owner ID must be a valid UUID' })
-  ownerId?: string;
-
-  @IsOptional()
-  @IsArray({ message: 'Team member IDs must be an array' })
-  @IsUUID(4, { each: true, message: 'Each team member ID must be a valid UUID' })
-  teamMemberIds?: string[];
-
-  @IsOptional()
-  @IsArray({ message: 'Tags must be an array' })
-  @IsString({ each: true, message: 'Each tag must be a string' })
-  @MaxLength(50, { each: true, message: 'Each tag must not exceed 50 characters' })
-  @Transform(({ value }) => 
-    Array.isArray(value) 
-      ? value.map(tag => typeof tag === 'string' ? tag.trim().toLowerCase() : tag)
-      : value
-  )
-  tags?: string[];
-
-  @IsOptional()
-  @IsUrl({}, { message: 'Repository URL must be a valid URL' })
-  @Transform(({ value }) => value?.trim())
-  repositoryUrl?: string;
-
-  @IsOptional()
-  @IsUrl({}, { message: 'Documentation URL must be a valid URL' })
-  @Transform(({ value }) => value?.trim())
-  documentationUrl?: string;
-
-  @IsOptional()
-  @IsString({ message: 'Client name must be a string' })
-  @MaxLength(100, { message: 'Client name must not exceed 100 characters' })
-  @Transform(({ value }) => value?.trim())
-  clientName?: string;
-
-  @IsOptional()
-  @IsString({ message: 'Department must be a string' })
-  @MaxLength(100, { message: 'Department must not exceed 100 characters' })
-  @Transform(({ value }) => value?.trim())
-  department?: string;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'Estimated hours must be a number' })
-  @Min(1, { message: 'Estimated hours must be at least 1' })
-  @Max(100000, { message: 'Estimated hours must not exceed 100,000' })
-  estimatedHours?: number;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'Actual hours must be a number' })
-  @Min(0, { message: 'Actual hours must be at least 0' })
-  @Max(100000, { message: 'Actual hours must not exceed 100,000' })
-  actualHours?: number;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'Progress percentage must be a number' })
-  @Min(0, { message: 'Progress must be at least 0%' })
-  @Max(100, { message: 'Progress must not exceed 100%' })
-  progressPercentage?: number;
-
-  @IsOptional()
-  @IsBoolean({ message: 'Is archived must be a boolean' })
-  isArchived?: boolean;
 }
 
 export class ProjectQueryDto {
   @IsOptional()
   @IsEnum(ProjectStatus, {
-    message: 'Status must be one of: PLANNING, ACTIVE, ON_HOLD, COMPLETED, CANCELLED, ARCHIVED',
+    message: `Status must be one of: ${Object.values(ProjectStatus).join(', ')}`,
   })
   status?: ProjectStatus;
-
-  @IsOptional()
-  @IsEnum(ProjectPriority, {
-    message: 'Priority must be one of: LOW, MEDIUM, HIGH, CRITICAL',
-  })
-  priority?: ProjectPriority;
-
-  @IsOptional()
-  @IsEnum(ProjectVisibility, {
-    message: 'Visibility must be one of: PUBLIC, PRIVATE, TEAM',
-  })
-  visibility?: ProjectVisibility;
-
-  @IsOptional()
-  @IsUUID(4, { message: 'Owner ID must be a valid UUID' })
-  ownerId?: string;
 
   @IsOptional()
   @IsString({ message: 'Search term must be a string' })
@@ -296,83 +74,88 @@ export class ProjectQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsString({ message: 'Tag must be a string' })
-  @MaxLength(50, { message: 'Tag must not exceed 50 characters' })
-  @Transform(({ value }) => value?.trim().toLowerCase())
-  tag?: string;
-
-  @IsOptional()
-  @IsString({ message: 'Department must be a string' })
-  @MaxLength(100, { message: 'Department must not exceed 100 characters' })
-  @Transform(({ value }) => value?.trim())
-  department?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }) => {
+    const parsed = parseInt(value);
+    return isNaN(parsed) ? 1 : Math.max(1, parsed);
+  })
   @IsNumber({}, { message: 'Page must be a number' })
   @Min(1, { message: 'Page must be at least 1' })
-  page?: number;
+  page?: number = 1;
 
   @IsOptional()
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }) => {
+    const parsed = parseInt(value);
+    return isNaN(parsed) ? 10 : Math.min(Math.max(1, parsed), 100);
+  })
   @IsNumber({}, { message: 'Limit must be a number' })
   @Min(1, { message: 'Limit must be at least 1' })
   @Max(100, { message: 'Limit must not exceed 100' })
-  limit?: number;
+  limit?: number = 10;
 
   @IsOptional()
   @IsString({ message: 'Sort field must be a string' })
   @Transform(({ value }) => value?.trim())
-  sortBy?: string;
+  sortBy?: string = 'createdAt';
 
   @IsOptional()
   @IsEnum(['ASC', 'DESC'], {
     message: 'Sort order must be either ASC or DESC',
   })
-  sortOrder?: 'ASC' | 'DESC';
-
-  @IsOptional()
-  @IsBoolean({ message: 'Include archived must be a boolean' })
-  @Transform(({ value }) => value === 'true' || value === true)
-  includeArchived?: boolean;
+  @Transform(({ value }) => value?.toUpperCase())
+  sortOrder?: 'ASC' | 'DESC' = 'DESC';
 }
 
+// DTO for managing project members
 export class ProjectMemberDto {
   @IsUUID(4, { message: 'User ID must be a valid UUID' })
   userId: string;
 
   @IsOptional()
-  @IsString({ message: 'Role must be a string' })
-  @MaxLength(50, { message: 'Role must not exceed 50 characters' })
-  @Transform(({ value }) => value?.trim())
-  role?: string;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'Hourly rate must be a number' })
-  @Min(0, { message: 'Hourly rate must be at least 0' })
-  @Max(10000, { message: 'Hourly rate must not exceed 10,000' })
-  hourlyRate?: number;
+  @IsEnum(ProjectRole, {
+    message: `Role must be one of: ${Object.values(ProjectRole).join(', ')}`,
+  })
+  role?: ProjectRole = ProjectRole.MEMBER;
 }
 
-export class ProjectTimelogDto {
-  @IsString({ message: 'Description must be a string' })
-  @MinLength(1, { message: 'Description cannot be empty' })
-  @MaxLength(500, { message: 'Description must not exceed 500 characters' })
-  @Transform(({ value }) => value?.trim())
-  description: string;
+// DTO for updating project member role
+export class UpdateProjectMemberDto {
+  @IsEnum(ProjectRole, {
+    message: `Role must be one of: ${Object.values(ProjectRole).join(', ')}`,
+  })
+  role: ProjectRole;
+}
 
-  @IsNumber({}, { message: 'Hours must be a number' })
-  @Min(0.1, { message: 'Hours must be at least 0.1' })
-  @Max(24, { message: 'Hours must not exceed 24 per entry' })
-  hours: number;
+// Response DTOs
+export class ProjectResponseDto {
+  id: string;
+  name: string;
+  description?: string;
+  status: ProjectStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-  @IsOptional()
-  @Type(() => Date)
-  @IsDate({ message: 'Date must be a valid date' })
-  @Transform(({ value }) => value ? new Date(value) : undefined)
-  date?: Date;
+export class ProjectWithMembersDto extends ProjectResponseDto {
+  members: {
+    id: string;
+    role: ProjectRole;
+    joinedAt: Date;
+    user: {
+      id: string;
+      username: string;
+      firstName?: string;
+      lastName?: string;
+      email: string;
+    };
+  }[];
+}
 
-  @IsOptional()
-  @IsUUID(4, { message: 'Task ID must be a valid UUID' })
-  taskId?: string;
+export class ProjectSummaryDto {
+  id: string;
+  name: string;
+  description?: string;
+  status: ProjectStatus;
+  memberCount: number;
+  taskCount: number;
+  createdAt: Date;
 }
