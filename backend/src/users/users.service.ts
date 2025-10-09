@@ -4,14 +4,36 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../database';
-import { CreateUserDto, UpdateUserDto, UserQueryDto } from './users.dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserQueryDto,
+  UserResponseDto,
+  PaginatedUsersResponseDto,
+  UserProjectMembershipDto,
+  UserTaskDto,
+} from './users.dto';
 import * as bcrypt from 'bcrypt';
+import { Prisma } from '@prisma/client';
+
+const userSelect = {
+  id: true,
+  email: true,
+  username: true,
+  firstName: true,
+  lastName: true,
+  avatar: true,
+  role: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.UserSelect;
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     // Check if email already exists
     const existingEmail = await this.prisma.user.findUnique({
       where: { email: createUserDto.email },
@@ -38,25 +60,14 @@ export class UsersService {
         ...createUserDto,
         password: hashedPassword,
       },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userSelect,
     });
   }
 
-  async findAll(query?: UserQueryDto) {
+  async findAll(query?: UserQueryDto): Promise<PaginatedUsersResponseDto> {
     const { search, role, isActive, page = 1, limit = 10 } = query || {};
 
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
 
     // Filter by active status
     if (isActive !== undefined) {
@@ -86,18 +97,7 @@ export class UsersService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-          firstName: true,
-          lastName: true,
-          avatar: true,
-          role: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        select: userSelect,
       }),
       this.prisma.user.count({ where }),
     ]);
@@ -113,21 +113,10 @@ export class UsersService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<UserResponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userSelect,
     });
 
     if (!user) {
@@ -137,7 +126,10 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
     // Check if user exists
     const user = await this.findOne(id);
 
@@ -166,67 +158,34 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: updateUserDto,
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userSelect,
     });
   }
 
-  async remove(id: string) {
-    const user = await this.findOne(id);
-
+  async remove(id: string): Promise<UserResponseDto> {
+    await this.findOne(id);
     return this.prisma.user.delete({
       where: { id },
+      select: userSelect,
     });
   }
 
   // Additional helper methods
-  async findByEmail(email: string) {
+  async findByEmail(email: string): Promise<UserResponseDto | null> {
     return this.prisma.user.findUnique({
       where: { email: email.toLowerCase() },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userSelect,
     });
   }
 
-  async findByUsername(username: string) {
+  async findByUsername(username: string): Promise<UserResponseDto | null> {
     return this.prisma.user.findUnique({
       where: { username: username.toLowerCase() },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userSelect,
     });
   }
 
-  async getUserProjects(userId: string) {
+  async getUserProjects(userId: string): Promise<UserProjectMembershipDto[]> {
     return this.prisma.projectMember.findMany({
       where: { userId },
       include: {
@@ -251,7 +210,7 @@ export class UsersService {
     });
   }
 
-  async getUserTasks(userId: string) {
+  async getUserTasks(userId: string): Promise<UserTaskDto[]> {
     return this.prisma.task.findMany({
       where: {
         OR: [{ creatorId: userId }, { assigneeId: userId }],
@@ -276,24 +235,16 @@ export class UsersService {
     });
   }
 
-  async updateUserStatus(id: string, isActive: boolean) {
-    const user = await this.findOne(id);
+  async updateUserStatus(
+    id: string,
+    isActive: boolean,
+  ): Promise<UserResponseDto> {
+    await this.findOne(id);
 
     return this.prisma.user.update({
       where: { id },
       data: { isActive },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userSelect,
     });
   }
 
@@ -301,7 +252,7 @@ export class UsersService {
     id: string,
     currentPassword: string,
     newPassword: string,
-  ) {
+  ): Promise<UserResponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -325,18 +276,7 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: { password: hashedNewPassword },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userSelect,
     });
   }
 }

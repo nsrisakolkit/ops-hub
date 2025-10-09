@@ -139,16 +139,17 @@ export class AuthUserDto {
   @ApiProperty({ example: 'newuser' })
   username!: string;
 
-  @ApiPropertyOptional({ example: 'New' })
-  firstName?: string;
+  @ApiPropertyOptional({ example: 'New', nullable: true })
+  firstName?: string | null;
 
-  @ApiPropertyOptional({ example: 'User' })
-  lastName?: string;
+  @ApiPropertyOptional({ example: 'User', nullable: true })
+  lastName?: string | null;
 
   @ApiPropertyOptional({
     example: 'https://cdn.example.com/avatars/newuser.png',
+    nullable: true,
   })
-  avatar?: string;
+  avatar?: string | null;
 
   @ApiProperty({ enum: Role, example: Role.USER })
   role!: Role;
