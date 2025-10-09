@@ -11,7 +11,7 @@ import {
   Max,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { TaskStatus, Priority } from '@prisma/client'; 
+import { TaskStatus, Priority } from '@prisma/client';
 
 export class CreateTaskDto {
   @IsString({ message: 'Title must be a string' })
@@ -28,7 +28,8 @@ export class CreateTaskDto {
 
   @IsOptional()
   @IsEnum(TaskStatus, {
-    message: 'Status must be one of: TODO, IN_PROGRESS, IN_REVIEW, DONE, CANCELLED',
+    message:
+      'Status must be one of: TODO, IN_PROGRESS, IN_REVIEW, DONE, CANCELLED',
   })
   status?: TaskStatus;
 
@@ -52,7 +53,7 @@ export class CreateTaskDto {
   @IsOptional()
   @Type(() => Date)
   @IsDate({ message: 'Due date must be a valid date' })
-  @Transform(({ value }) => value ? new Date(value) : undefined)
+  @Transform(({ value }) => (value ? new Date(value) : undefined))
   dueDate?: Date;
 }
 
@@ -72,7 +73,8 @@ export class UpdateTaskDto {
 
   @IsOptional()
   @IsEnum(TaskStatus, {
-    message: 'Status must be one of: TODO, IN_PROGRESS, IN_REVIEW, DONE, CANCELLED',
+    message:
+      'Status must be one of: TODO, IN_PROGRESS, IN_REVIEW, DONE, CANCELLED',
   })
   status?: TaskStatus;
 
@@ -93,14 +95,15 @@ export class UpdateTaskDto {
   @IsOptional()
   @Type(() => Date)
   @IsDate({ message: 'Due date must be a valid date' })
-  @Transform(({ value }) => value ? new Date(value) : undefined)
+  @Transform(({ value }) => (value ? new Date(value) : undefined))
   dueDate?: Date;
 }
 
 export class TaskQueryDto {
   @IsOptional()
   @IsEnum(TaskStatus, {
-    message: 'Status must be one of: TODO, IN_PROGRESS, IN_REVIEW, DONE, CANCELLED',
+    message:
+      'Status must be one of: TODO, IN_PROGRESS, IN_REVIEW, DONE, CANCELLED',
   })
   status?: TaskStatus;
 

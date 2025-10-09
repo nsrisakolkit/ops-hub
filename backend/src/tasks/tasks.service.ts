@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../database';
 import { CreateTaskDto, UpdateTaskDto, TaskQueryDto } from './tasks.dto';
 
@@ -11,14 +15,15 @@ export class TasksService {
   constructor(private prisma: PrismaService) {}
 
   async create(createTaskDto: CreateTaskServiceDto) {
-
     // Verify project exists
     const project = await this.prisma.project.findUnique({
       where: { id: createTaskDto.projectId },
     });
 
     if (!project) {
-      throw new NotFoundException(`Project with ID ${createTaskDto.projectId} not found`);
+      throw new NotFoundException(
+        `Project with ID ${createTaskDto.projectId} not found`,
+      );
     }
 
     // Verify assignee exists if provided
@@ -28,7 +33,9 @@ export class TasksService {
       });
 
       if (!assignee) {
-        throw new NotFoundException(`User with ID ${createTaskDto.assigneeId} not found`);
+        throw new NotFoundException(
+          `User with ID ${createTaskDto.assigneeId} not found`,
+        );
       }
     }
 
@@ -122,8 +129,17 @@ export class TasksService {
     const skip = (page - 1) * limit;
 
     // Define valid sort fields
-    const validSortFields = ['createdAt', 'updatedAt', 'title', 'status', 'priority', 'dueDate'];
-    const orderByField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+    const validSortFields = [
+      'createdAt',
+      'updatedAt',
+      'title',
+      'status',
+      'priority',
+      'dueDate',
+    ];
+    const orderByField = validSortFields.includes(sortBy)
+      ? sortBy
+      : 'createdAt';
     const orderByDirection = sortOrder.toLowerCase() === 'asc' ? 'asc' : 'desc';
 
     const [tasks, total] = await Promise.all([
@@ -237,25 +253,35 @@ export class TasksService {
     const existingTask = await this.findOne(id);
 
     // Verify project exists if being updated
-    if (updateTaskDto.projectId && updateTaskDto.projectId !== existingTask.projectId) {
+    if (
+      updateTaskDto.projectId &&
+      updateTaskDto.projectId !== existingTask.projectId
+    ) {
       const project = await this.prisma.project.findUnique({
         where: { id: updateTaskDto.projectId },
       });
 
       if (!project) {
-        throw new NotFoundException(`Project with ID ${updateTaskDto.projectId} not found`);
+        throw new NotFoundException(
+          `Project with ID ${updateTaskDto.projectId} not found`,
+        );
       }
     }
 
     // Verify assignee exists if being updated
-    if (updateTaskDto.assigneeId !== undefined && updateTaskDto.assigneeId !== existingTask.assigneeId) {
+    if (
+      updateTaskDto.assigneeId !== undefined &&
+      updateTaskDto.assigneeId !== existingTask.assigneeId
+    ) {
       if (updateTaskDto.assigneeId) {
         const assignee = await this.prisma.user.findUnique({
           where: { id: updateTaskDto.assigneeId },
         });
 
         if (!assignee) {
-          throw new NotFoundException(`User with ID ${updateTaskDto.assigneeId} not found`);
+          throw new NotFoundException(
+            `User with ID ${updateTaskDto.assigneeId} not found`,
+          );
         }
       }
     }
@@ -301,7 +327,7 @@ export class TasksService {
 
   async remove(id: string) {
     const task = await this.findOne(id);
-    
+
     return this.prisma.task.delete({
       where: { id },
     });
@@ -325,7 +351,7 @@ export class TasksService {
 
   async updateTaskStatus(id: string, status: any) {
     const task = await this.findOne(id);
-    
+
     return this.prisma.task.update({
       where: { id },
       data: { status },

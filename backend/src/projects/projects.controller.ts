@@ -1,27 +1,32 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
-  UseGuards, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
   Query,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { JwtAuthGuard } from '../common/guards';
-import { 
-  CreateProjectDto, 
-  ProjectMemberDto, 
-  UpdateProjectDto, 
+import {
+  CreateProjectDto,
+  ProjectMemberDto,
+  UpdateProjectDto,
   UpdateProjectMemberDto,
-  ProjectQueryDto 
+  ProjectQueryDto,
 } from './projects.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 
 @ApiTags('projects')
 @ApiBearerAuth()
@@ -34,12 +39,20 @@ export class ProjectsController {
   @ApiOperation({ summary: 'Create a new project' })
   @ApiResponse({ status: 201, description: 'Project created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  create(@Body() createProjectDto: CreateProjectDto, @CurrentUser('sub') userId: string) {
-    return this.projectsService.create({ ...createProjectDto, creatorId: userId });
+  create(
+    @Body() createProjectDto: CreateProjectDto,
+    @CurrentUser('sub') userId: string,
+  ) {
+    return this.projectsService.create({
+      ...createProjectDto,
+      creatorId: userId,
+    });
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all projects with optional filtering and pagination' })
+  @ApiOperation({
+    summary: 'Get all projects with optional filtering and pagination',
+  })
   @ApiResponse({ status: 200, description: 'Projects retrieved successfully' })
   findAll(@Query() query: ProjectQueryDto) {
     return this.projectsService.findAll(query);
@@ -73,7 +86,10 @@ export class ProjectsController {
 
   @Get(':id/members')
   @ApiOperation({ summary: 'Get all members of a project' })
-  @ApiResponse({ status: 200, description: 'Project members retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Project members retrieved successfully',
+  })
   @ApiResponse({ status: 404, description: 'Project not found' })
   getMembers(@Param('id') id: string) {
     return this.projectsService.getProjectMembers(id);
@@ -92,12 +108,15 @@ export class ProjectsController {
   @Patch(':id/members/:userId')
   @ApiOperation({ summary: 'Update a member role in the project' })
   @ApiResponse({ status: 200, description: 'Member role updated successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input data or cannot change last owner' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data or cannot change last owner',
+  })
   @ApiResponse({ status: 404, description: 'Project or member not found' })
   updateMemberRole(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @Param('userId') userId: string,
-    @Body() updateDto: UpdateProjectMemberDto
+    @Body() updateDto: UpdateProjectMemberDto,
   ) {
     return this.projectsService.updateMemberRole(id, userId, updateDto);
   }

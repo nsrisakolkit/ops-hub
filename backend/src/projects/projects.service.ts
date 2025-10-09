@@ -1,6 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../database';
-import { CreateProjectDto, UpdateProjectDto, ProjectQueryDto, ProjectMemberDto, UpdateProjectMemberDto } from './projects.dto';
+import {
+  CreateProjectDto,
+  UpdateProjectDto,
+  ProjectQueryDto,
+  ProjectMemberDto,
+  UpdateProjectMemberDto,
+} from './projects.dto';
 
 // Define enum types locally since Prisma client export might not be available
 type ProjectRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
@@ -190,7 +201,7 @@ export class ProjectsService {
   async update(id: string, updateProjectDto: UpdateProjectDto) {
     // Check if project exists
     await this.findOne(id);
-    
+
     return this.prisma.project.update({
       where: { id },
       data: updateProjectDto,
@@ -215,7 +226,7 @@ export class ProjectsService {
   async remove(id: string) {
     // Check if project exists
     await this.findOne(id);
-    
+
     return this.prisma.project.delete({
       where: { id },
     });
@@ -272,7 +283,11 @@ export class ProjectsService {
     return projectMember;
   }
 
-  async updateMemberRole(projectId: string, userId: string, updateDto: UpdateProjectMemberDto) {
+  async updateMemberRole(
+    projectId: string,
+    userId: string,
+    updateDto: UpdateProjectMemberDto,
+  ) {
     // Check if project exists
     await this.findOne(projectId);
 
@@ -311,7 +326,9 @@ export class ProjectsService {
       });
 
       if (ownerCount === 1) {
-        throw new BadRequestException(`Cannot change role of the last project owner`);
+        throw new BadRequestException(
+          `Cannot change role of the last project owner`,
+        );
       }
     }
 

@@ -14,7 +14,10 @@ import { TasksModule } from './tasks';
 import { MetricsModule } from './metrics';
 
 // Common
-import { RequestLoggerMiddleware, RequestIdMiddleware } from './common/middleware';
+import {
+  RequestLoggerMiddleware,
+  RequestIdMiddleware,
+} from './common/middleware';
 import { LoggingModule } from './logging/logging.module';
 import { CacheModule } from './cache/cache.module';
 
@@ -23,7 +26,7 @@ import { CacheModule } from './cache/cache.module';
     // Core modules
     AppConfigModule,
     DatabaseModule.forRoot(),
-    
+
     // Feature modules
     AuthModule,
     UsersModule,
@@ -34,14 +37,10 @@ import { CacheModule } from './cache/cache.module';
     CacheModule.forRootAsync(),
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-  ],
+  providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(RequestIdMiddleware, RequestLoggerMiddleware)
-      .forRoutes('*');
+    consumer.apply(RequestIdMiddleware, RequestLoggerMiddleware).forRoutes('*');
   }
 }

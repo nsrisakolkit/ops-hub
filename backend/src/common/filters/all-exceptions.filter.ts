@@ -11,7 +11,7 @@ import { Request, Response } from 'express';
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
-  
+
   // host: ArgumentsHost is a context object that provides access to the current execution context (request, response, and other execution details)
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
@@ -24,9 +24,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      message = typeof exceptionResponse === 'string' 
-        ? exceptionResponse 
-        : exceptionResponse;
+      message =
+        typeof exceptionResponse === 'string'
+          ? exceptionResponse
+          : exceptionResponse;
     } else if (exception instanceof Error) {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'Internal server error';
@@ -46,7 +47,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
     this.logger.error(
-      `${request.method} ${request.url} ${status} - ${JSON.stringify(message)}`
+      `${request.method} ${request.url} ${status} - ${JSON.stringify(message)}`,
     );
 
     response.status(status).json(errorResponse);

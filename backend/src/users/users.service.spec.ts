@@ -325,7 +325,7 @@ describe('UsersService', () => {
 
     it('should update a user successfully', async () => {
       const updatedUser = { ...mockUser, ...updateUserDto };
-      
+
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
       mockPrismaService.user.update.mockResolvedValue(updatedUser);
 
@@ -362,7 +362,11 @@ describe('UsersService', () => {
 
     it('should throw ConflictException if username is being updated and already exists', async () => {
       const updateDto = { username: 'existinguser' };
-      const existingUserWithUsername = { ...mockUser, id: '2', username: 'existinguser' };
+      const existingUserWithUsername = {
+        ...mockUser,
+        id: '2',
+        username: 'existinguser',
+      };
 
       mockPrismaService.user.findUnique
         .mockResolvedValueOnce(mockUser) // findOne call
@@ -462,7 +466,9 @@ describe('UsersService', () => {
         },
       ];
 
-      mockPrismaService.projectMember.findMany.mockResolvedValue(mockProjectMembers);
+      mockPrismaService.projectMember.findMany.mockResolvedValue(
+        mockProjectMembers,
+      );
 
       const result = await service.getUserProjects('1');
 
@@ -502,10 +508,7 @@ describe('UsersService', () => {
 
       expect(mockPrismaService.task.findMany).toHaveBeenCalledWith({
         where: {
-          OR: [
-            { creatorId: '1' },
-            { assigneeId: '1' },
-          ],
+          OR: [{ creatorId: '1' }, { assigneeId: '1' }],
         },
         include: {
           project: {

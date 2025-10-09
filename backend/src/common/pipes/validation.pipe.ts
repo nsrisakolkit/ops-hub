@@ -20,14 +20,16 @@ export class GlobalValidationPipe extends ValidationPipe {
     });
   }
 
-  private formatErrors(validationErrors: ValidationError[]): Record<string, string[]> {
+  private formatErrors(
+    validationErrors: ValidationError[],
+  ): Record<string, string[]> {
     const errors: Record<string, string[]> = {};
 
     validationErrors.forEach((error) => {
       if (error.constraints) {
         errors[error.property] = Object.values(error.constraints);
       }
-      
+
       if (error.children && error.children.length > 0) {
         const nestedErrors = this.formatErrors(error.children);
         Object.keys(nestedErrors).forEach((key) => {

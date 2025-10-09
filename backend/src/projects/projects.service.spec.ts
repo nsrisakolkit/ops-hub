@@ -1,8 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { PrismaService } from '../database';
-import { CreateProjectDto, UpdateProjectDto, ProjectQueryDto, ProjectMemberDto, UpdateProjectMemberDto } from './projects.dto';
+import {
+  CreateProjectDto,
+  UpdateProjectDto,
+  ProjectQueryDto,
+  ProjectMemberDto,
+  UpdateProjectMemberDto,
+} from './projects.dto';
 
 // Define enum types locally since Prisma client export might not be available
 type ProjectStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED' | 'COMPLETED';
@@ -409,7 +419,9 @@ describe('ProjectsService', () => {
 
   describe('findOne', () => {
     it('should return a project by id', async () => {
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
 
       const result = await service.findOne('1');
 
@@ -437,8 +449,10 @@ describe('ProjectsService', () => {
 
     it('should update a project successfully', async () => {
       const updatedProject = { ...mockProject, ...updateProjectDto };
-      
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.project.update.mockResolvedValue(updatedProject);
 
       const result = await service.update('1', updateProjectDto);
@@ -462,7 +476,9 @@ describe('ProjectsService', () => {
 
   describe('remove', () => {
     it('should delete a project successfully', async () => {
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.project.delete.mockResolvedValue(mockProject);
 
       const result = await service.remove('1');
@@ -487,10 +503,14 @@ describe('ProjectsService', () => {
     };
 
     it('should add a member to project successfully', async () => {
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
       mockPrismaService.projectMember.findUnique.mockResolvedValue(null);
-      mockPrismaService.projectMember.create.mockResolvedValue(mockProjectMember);
+      mockPrismaService.projectMember.create.mockResolvedValue(
+        mockProjectMember,
+      );
 
       const result = await service.addMember('1', memberDto);
 
@@ -522,11 +542,15 @@ describe('ProjectsService', () => {
 
     it('should add a member with default role', async () => {
       const memberDtoWithoutRole = { userId: '2' };
-      
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
       mockPrismaService.projectMember.findUnique.mockResolvedValue(null);
-      mockPrismaService.projectMember.create.mockResolvedValue(mockProjectMember);
+      mockPrismaService.projectMember.create.mockResolvedValue(
+        mockProjectMember,
+      );
 
       await service.addMember('1', memberDtoWithoutRole);
 
@@ -549,7 +573,9 @@ describe('ProjectsService', () => {
     });
 
     it('should throw NotFoundException if user not found', async () => {
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
       await expect(service.addMember('1', memberDto)).rejects.toThrow(
@@ -558,9 +584,13 @@ describe('ProjectsService', () => {
     });
 
     it('should throw ConflictException if user is already a member', async () => {
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-      mockPrismaService.projectMember.findUnique.mockResolvedValue(mockProjectMember);
+      mockPrismaService.projectMember.findUnique.mockResolvedValue(
+        mockProjectMember,
+      );
 
       await expect(service.addMember('1', memberDto)).rejects.toThrow(
         new ConflictException('User is already a member of this project'),
@@ -574,11 +604,21 @@ describe('ProjectsService', () => {
     };
 
     it('should update member role successfully', async () => {
-      const existingMember = { ...mockProjectMember, role: 'MEMBER' as ProjectRole };
-      const updatedMember = { ...mockProjectMember, role: 'ADMIN' as ProjectRole };
+      const existingMember = {
+        ...mockProjectMember,
+        role: 'MEMBER' as ProjectRole,
+      };
+      const updatedMember = {
+        ...mockProjectMember,
+        role: 'ADMIN' as ProjectRole,
+      };
 
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
-      mockPrismaService.projectMember.findUnique.mockResolvedValue(existingMember);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
+      mockPrismaService.projectMember.findUnique.mockResolvedValue(
+        existingMember,
+      );
       mockPrismaService.projectMember.update.mockResolvedValue(updatedMember);
 
       const result = await service.updateMemberRole('1', '2', updateDto);
@@ -601,29 +641,40 @@ describe('ProjectsService', () => {
     it('should throw NotFoundException if project not found', async () => {
       mockPrismaService.project.findUnique.mockResolvedValue(null);
 
-      await expect(service.updateMemberRole('999', '2', updateDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.updateMemberRole('999', '2', updateDto),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException if member not found', async () => {
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.projectMember.findUnique.mockResolvedValue(null);
 
-      await expect(service.updateMemberRole('1', '999', updateDto)).rejects.toThrow(
+      await expect(
+        service.updateMemberRole('1', '999', updateDto),
+      ).rejects.toThrow(
         new NotFoundException('User is not a member of this project'),
       );
     });
 
     it('should throw BadRequestException when trying to change last owner role', async () => {
-      const ownerMember = { ...mockProjectMember, role: 'OWNER' as ProjectRole };
+      const ownerMember = {
+        ...mockProjectMember,
+        role: 'OWNER' as ProjectRole,
+      };
       const updateOwnerDto = { role: 'ADMIN' as ProjectRole };
 
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.projectMember.findUnique.mockResolvedValue(ownerMember);
       mockPrismaService.projectMember.count.mockResolvedValue(1); // Only one owner
 
-      await expect(service.updateMemberRole('1', '2', updateOwnerDto)).rejects.toThrow(
+      await expect(
+        service.updateMemberRole('1', '2', updateOwnerDto),
+      ).rejects.toThrow(
         new BadRequestException('Cannot change role of the last project owner'),
       );
 
@@ -636,11 +687,19 @@ describe('ProjectsService', () => {
     });
 
     it('should allow changing owner role when there are multiple owners', async () => {
-      const ownerMember = { ...mockProjectMember, role: 'OWNER' as ProjectRole };
+      const ownerMember = {
+        ...mockProjectMember,
+        role: 'OWNER' as ProjectRole,
+      };
       const updateOwnerDto = { role: 'ADMIN' as ProjectRole };
-      const updatedMember = { ...mockProjectMember, role: 'ADMIN' as ProjectRole };
+      const updatedMember = {
+        ...mockProjectMember,
+        role: 'ADMIN' as ProjectRole,
+      };
 
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.projectMember.findUnique.mockResolvedValue(ownerMember);
       mockPrismaService.projectMember.count.mockResolvedValue(2); // Multiple owners
       mockPrismaService.projectMember.update.mockResolvedValue(updatedMember);
@@ -653,10 +712,17 @@ describe('ProjectsService', () => {
 
   describe('removeMember', () => {
     it('should remove member successfully', async () => {
-      const memberToRemove = { ...mockProjectMember, role: 'MEMBER' as ProjectRole };
+      const memberToRemove = {
+        ...mockProjectMember,
+        role: 'MEMBER' as ProjectRole,
+      };
 
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
-      mockPrismaService.projectMember.findUnique.mockResolvedValue(memberToRemove);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
+      mockPrismaService.projectMember.findUnique.mockResolvedValue(
+        memberToRemove,
+      );
       mockPrismaService.projectMember.delete.mockResolvedValue(memberToRemove);
 
       const result = await service.removeMember('1', '2');
@@ -681,7 +747,9 @@ describe('ProjectsService', () => {
     });
 
     it('should throw NotFoundException if member not found', async () => {
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.projectMember.findUnique.mockResolvedValue(null);
 
       await expect(service.removeMember('1', '999')).rejects.toThrow(
@@ -690,9 +758,14 @@ describe('ProjectsService', () => {
     });
 
     it('should throw BadRequestException when trying to remove last owner', async () => {
-      const ownerMember = { ...mockProjectMember, role: 'OWNER' as ProjectRole };
+      const ownerMember = {
+        ...mockProjectMember,
+        role: 'OWNER' as ProjectRole,
+      };
 
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.projectMember.findUnique.mockResolvedValue(ownerMember);
       mockPrismaService.projectMember.count.mockResolvedValue(1); // Only one owner
 
@@ -709,9 +782,14 @@ describe('ProjectsService', () => {
     });
 
     it('should allow removing owner when there are multiple owners', async () => {
-      const ownerMember = { ...mockProjectMember, role: 'OWNER' as ProjectRole };
+      const ownerMember = {
+        ...mockProjectMember,
+        role: 'OWNER' as ProjectRole,
+      };
 
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.projectMember.findUnique.mockResolvedValue(ownerMember);
       mockPrismaService.projectMember.count.mockResolvedValue(2); // Multiple owners
       mockPrismaService.projectMember.delete.mockResolvedValue(ownerMember);
@@ -738,7 +816,9 @@ describe('ProjectsService', () => {
     ];
 
     it('should return project members', async () => {
-      mockPrismaService.project.findUnique.mockResolvedValue(mockDetailedProject);
+      mockPrismaService.project.findUnique.mockResolvedValue(
+        mockDetailedProject,
+      );
       mockPrismaService.projectMember.findMany.mockResolvedValue(mockMembers);
 
       const result = await service.getProjectMembers('1');

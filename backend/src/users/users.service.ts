@@ -1,8 +1,11 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../database';
 import { CreateUserDto, UpdateUserDto, UserQueryDto } from './users.dto';
 import * as bcrypt from 'bcrypt';
-
 
 @Injectable()
 export class UsersService {
@@ -51,13 +54,7 @@ export class UsersService {
   }
 
   async findAll(query?: UserQueryDto) {
-    const {
-      search,
-      role,
-      isActive,
-      page = 1,
-      limit = 10,
-    } = query || {};
+    const { search, role, isActive, page = 1, limit = 10 } = query || {};
 
     const where: any = {};
 
@@ -165,7 +162,7 @@ export class UsersService {
         throw new ConflictException('Username already exists');
       }
     }
-    
+
     return this.prisma.user.update({
       where: { id },
       data: updateUserDto,
@@ -186,7 +183,7 @@ export class UsersService {
 
   async remove(id: string) {
     const user = await this.findOne(id);
-    
+
     return this.prisma.user.delete({
       where: { id },
     });
@@ -257,10 +254,7 @@ export class UsersService {
   async getUserTasks(userId: string) {
     return this.prisma.task.findMany({
       where: {
-        OR: [
-          { creatorId: userId },
-          { assigneeId: userId },
-        ],
+        OR: [{ creatorId: userId }, { assigneeId: userId }],
       },
       include: {
         project: {
@@ -284,7 +278,7 @@ export class UsersService {
 
   async updateUserStatus(id: string, isActive: boolean) {
     const user = await this.findOne(id);
-    
+
     return this.prisma.user.update({
       where: { id },
       data: { isActive },
@@ -303,7 +297,11 @@ export class UsersService {
     });
   }
 
-  async updatePassword(id: string, currentPassword: string, newPassword: string) {
+  async updatePassword(
+    id: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -313,7 +311,10 @@ export class UsersService {
     }
 
     // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
     if (!isCurrentPasswordValid) {
       throw new ConflictException('Current password is incorrect');
     }

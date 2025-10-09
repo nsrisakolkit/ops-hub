@@ -3,10 +3,26 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../database';
 import { AppConfigService } from '../config';
+import { Role, User } from '@prisma/client';
 
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+}
+
+type SanitizedUser = Omit<User, 'password'>;
+
+interface CreateAuthUserInput {
+  email: string;
+  username: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  role?: Role;
+}
+
+interface RefreshTokenPayload {
+  sub: string;
 }
 
 @Injectable()
@@ -17,7 +33,10 @@ export class AuthService {
     private configService: AppConfigService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<SanitizedUser | null> {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -25,19 +44,19 @@ export class AuthService {
     if (user && user.isActive) {
       // Compare the provided password with the hashed password
       const isPasswordValid = await bcrypt.compare(password, user.password);
-      
+
       if (isPasswordValid) {
         // Remove password from the returned user object
-        const { password: _, ...result } = user;
-        return result;
+        const sanitizedUser: SanitizedUser = this.stripPassword(user);
+        return sanitizedUser;
       }
     }
     return null;
   }
 
-  async login(user: any): Promise<AuthTokens> {
+  login(user: SanitizedUser): AuthTokens {
     const payload = { email: user.email, sub: user.id, role: user.role };
-    
+
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: this.configService.jwtExpirationTime,
     });
@@ -55,9 +74,12 @@ export class AuthService {
 
   async refreshTokens(refreshToken: string): Promise<AuthTokens> {
     try {
-      const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.jwtRefreshSecret,
-      });
+      const payload = this.jwtService.verify<RefreshTokenPayload>(
+        refreshToken,
+        {
+          secret: this.configService.jwtRefreshSecret,
+        },
+      );
 
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
@@ -67,13 +89,14 @@ export class AuthService {
         throw new UnauthorizedException('User not found or inactive');
       }
 
-      return this.login(user);
-    } catch (error) {
+      const sanitizedUser = this.stripPassword(user);
+      return this.login(sanitizedUser);
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
-  async logout(userId: string): Promise<void> {
+  logout(userId: string): void {
     // In a real app, you might want to blacklist the token
     // For now, we'll just log the logout
     console.log(`User ${userId} logged out`);
@@ -84,16 +107,9 @@ export class AuthService {
     return bcrypt.hash(password, saltRounds);
   }
 
-  async createUser(userData: {
-    email: string;
-    username: string;
-    password: string;
-    firstName?: string;
-    lastName?: string;
-    role?: any;
-  }): Promise<any> {
+  async createUser(userData: CreateAuthUserInput): Promise<SanitizedUser> {
     const hashedPassword = await this.hashPassword(userData.password);
-    
+
     const user = await this.prisma.user.create({
       data: {
         ...userData,
@@ -103,8 +119,12 @@ export class AuthService {
       },
     });
 
-    // Remove password from response
-    const { password: _, ...userResponse } = user;
-    return userResponse;
+    return this.stripPassword(user);
+  }
+
+  private stripPassword(user: User): SanitizedUser {
+    const { password, ...rest } = user;
+    void password;
+    return rest;
   }
 }

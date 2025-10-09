@@ -20,17 +20,17 @@ export class TransformInterceptor<T>
 {
   intercept(
     context: ExecutionContext,
-    next: CallHandler
+    next: CallHandler,
   ): Observable<Response<T>> {
     const response = context.switchToHttp().getResponse();
-    
+
     return next.handle().pipe(
       map((data) => ({
         data,
         statusCode: response.statusCode,
         message: 'Success',
         timestamp: new Date().toISOString(),
-      }))
+      })),
     );
   }
 }

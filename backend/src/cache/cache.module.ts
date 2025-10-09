@@ -12,7 +12,7 @@ export class CacheModule {
         NestCache.registerAsync({
           useFactory: async (configService: AppConfigService) => {
             const redisUrl = configService.redisUrl;
-            
+
             if (redisUrl) {
               // Use Redis if URL is available
               return {

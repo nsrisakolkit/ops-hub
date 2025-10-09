@@ -51,7 +51,7 @@ export class EnvironmentVariables {
 export function validate(config: Record<string, unknown>) {
   // Transform plain object to class instance and validate. (but didn't activate class-validator)
   const validatedConfig = plainToInstance(EnvironmentVariables, config, {
-    enableImplicitConversion: true,   // Automatically convert compatible types
+    enableImplicitConversion: true, // Automatically convert compatible types
   });
 
   // Now activate class-validator to validate the instance
@@ -72,7 +72,7 @@ export function validate(config: Record<string, unknown>) {
 @Injectable()
 export class AppConfigService {
   constructor(private configService: ConfigService<EnvironmentVariables>) {}
-  
+
   // infer: true: Tells TypeScript to use the types from EnvironmentVariables
   get nodeEnv(): string {
     return this.configService.get('NODE_ENV', { infer: true })!;
@@ -103,7 +103,9 @@ export class AppConfigService {
   }
 
   get jwtRefreshExpirationTime(): number {
-    return this.configService.get('JWT_REFRESH_EXPIRATION_TIME', { infer: true })!;
+    return this.configService.get('JWT_REFRESH_EXPIRATION_TIME', {
+      infer: true,
+    })!;
   }
 
   get uploadPath(): string {

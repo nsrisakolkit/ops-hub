@@ -193,7 +193,9 @@ describe('TasksService', () => {
       mockPrismaService.project.findUnique.mockResolvedValue(null);
 
       await expect(service.create(createTaskDto)).rejects.toThrow(
-        new NotFoundException(`Project with ID ${createTaskDto.projectId} not found`),
+        new NotFoundException(
+          `Project with ID ${createTaskDto.projectId} not found`,
+        ),
       );
 
       expect(mockPrismaService.project.findUnique).toHaveBeenCalledWith({
@@ -206,7 +208,9 @@ describe('TasksService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
       await expect(service.create(createTaskDto)).rejects.toThrow(
-        new NotFoundException(`User with ID ${createTaskDto.assigneeId} not found`),
+        new NotFoundException(
+          `User with ID ${createTaskDto.assigneeId} not found`,
+        ),
       );
 
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
@@ -492,7 +496,7 @@ describe('TasksService', () => {
 
     it('should update a task successfully', async () => {
       const updatedTask = { ...mockTask, ...updateTaskDto };
-      
+
       mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
       mockPrismaService.task.update.mockResolvedValue(updatedTask);
 
@@ -516,7 +520,7 @@ describe('TasksService', () => {
 
     it('should validate project when updating projectId', async () => {
       const updateDto = { ...updateTaskDto, projectId: '2' };
-      
+
       mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
       mockPrismaService.project.findUnique.mockResolvedValue(null);
 
@@ -531,7 +535,7 @@ describe('TasksService', () => {
 
     it('should validate assignee when updating assigneeId', async () => {
       const updateDto = { ...updateTaskDto, assigneeId: '3' };
-      
+
       mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
@@ -547,7 +551,7 @@ describe('TasksService', () => {
     it('should allow unsetting assignee', async () => {
       const updateDto = { ...updateTaskDto, assigneeId: undefined };
       const updatedTask = { ...mockTask, assigneeId: null };
-      
+
       mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
       mockPrismaService.task.update.mockResolvedValue(updatedTask);
 
@@ -605,7 +609,7 @@ describe('TasksService', () => {
   describe('getTasksByAssignee', () => {
     it('should return tasks filtered by assignee', async () => {
       const query: TaskQueryDto = { page: 1, limit: 10 };
-      
+
       mockPrismaService.task.findMany.mockResolvedValue([mockTask]);
       mockPrismaService.task.count.mockResolvedValue(1);
 
@@ -624,7 +628,7 @@ describe('TasksService', () => {
   describe('getTasksByCreator', () => {
     it('should return tasks filtered by creator', async () => {
       const query: TaskQueryDto = { page: 1, limit: 10 };
-      
+
       mockPrismaService.task.findMany.mockResolvedValue(mockTasks);
       mockPrismaService.task.count.mockResolvedValue(2);
 
@@ -745,7 +749,7 @@ describe('TasksService', () => {
     it('should handle updating to same project gracefully', async () => {
       const updateDto = { title: 'Updated', projectId: '1' }; // Same project
       const updatedTask = { ...mockTask, ...updateDto };
-      
+
       mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
       mockPrismaService.task.update.mockResolvedValue(updatedTask);
 
@@ -759,7 +763,7 @@ describe('TasksService', () => {
     it('should handle updating to same assignee gracefully', async () => {
       const updateDto = { title: 'Updated', assigneeId: '2' }; // Same assignee
       const updatedTask = { ...mockTask, ...updateDto };
-      
+
       mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
       mockPrismaService.task.update.mockResolvedValue(updatedTask);
 

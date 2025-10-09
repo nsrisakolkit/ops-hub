@@ -23,16 +23,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
-      message: typeof exceptionResponse === 'string' 
-        ? exceptionResponse 
-        : (exceptionResponse as any).message || 'HTTP Exception',
-      error: typeof exceptionResponse === 'object' 
-        ? exceptionResponse 
-        : undefined,
+      message:
+        typeof exceptionResponse === 'string'
+          ? exceptionResponse
+          : (exceptionResponse as any).message || 'HTTP Exception',
+      error:
+        typeof exceptionResponse === 'object' ? exceptionResponse : undefined,
     };
 
     this.logger.warn(
-      `${request.method} ${request.url} ${status} - ${errorResponse.message}`
+      `${request.method} ${request.url} ${status} - ${errorResponse.message}`,
     );
 
     response.status(status).json(errorResponse);

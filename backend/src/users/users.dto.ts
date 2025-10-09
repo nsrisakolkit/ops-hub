@@ -21,7 +21,6 @@ export enum Role {
   SUPER_ADMIN = 'SUPER_ADMIN',
 }
 
-
 export class CreateUserDto {
   @IsEmail({}, { message: 'Please provide a valid email address' })
   @Transform(({ value }) => value?.toLowerCase()?.trim())
@@ -186,7 +185,9 @@ export class UpdateUserStatusDto {
 // DTO for password updates
 export class UpdatePasswordDto {
   @IsString()
-  @MinLength(6, { message: 'Current password must be at least 6 characters long' })
+  @MinLength(6, {
+    message: 'Current password must be at least 6 characters long',
+  })
   currentPassword: string;
 
   @IsString()
