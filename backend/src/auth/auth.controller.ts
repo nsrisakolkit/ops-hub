@@ -1,14 +1,21 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { AuthService, AuthTokens } from './auth.service';
 import { Public } from '../common/decorators';
+import { IsEmail, IsString, MinLength } from 'class-validator';
 
 export class LoginDto {
-  email: string;
-  password: string;
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(1)
+  password!: string;
 }
 
 export class RefreshTokenDto {
-  refreshToken: string;
+  @IsString()
+  @MinLength(1)
+  refreshToken!: string;
 }
 
 @Controller('auth')
@@ -20,12 +27,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto): Promise<AuthTokens> {
     const user = await this.authService.validateUser(
-      loginDto.email,
+      loginDto.email.toLowerCase(),
       loginDto.password,
     );
     
     if (!user) {
-      throw new Error('Invalid credentials');
+      throw new UnauthorizedException('Invalid credentials');
     }
     
     return this.authService.login(user);
