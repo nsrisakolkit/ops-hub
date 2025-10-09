@@ -5,6 +5,32 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  ArrowRight,
+  CheckCircle2,
+  Loader2,
+  Lock,
+  Shield,
+  Sparkles,
+} from 'lucide-react';
+
+const benefits = [
+  {
+    icon: Shield,
+    title: 'Enterprise-grade control',
+    description: 'Multi-tenant access policies, audit trails, and SSO baked in.',
+  },
+  {
+    icon: Lock,
+    title: 'Zero friction onboarding',
+    description: 'Provision teams and automate workflows in minutes, not days.',
+  },
+  {
+    icon: CheckCircle2,
+    title: 'Operational clarity',
+    description: 'Realtime signals and KPIs to keep delivery aligned and on track.',
+  },
+];
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -36,62 +62,139 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="w-full max-w-sm mx-4">
-        <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">OpsHub</h1>
-            <p className="text-slate-600 text-sm">Sign in to your account</p>
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-50">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -left-24 top-0 h-[520px] w-[520px] rounded-full bg-gradient-to-br from-sky-500/30 via-blue-500/20 to-emerald-500/20 blur-3xl" />
+        <div className="absolute -right-16 top-1/2 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-indigo-500/30 via-purple-500/20 to-slate-900/60 blur-3xl" />
+        <div className="absolute inset-x-0 bottom-[-40%] h-[560px] rounded-full bg-gradient-to-t from-slate-900 via-slate-950 to-transparent blur-3xl" />
+      </div>
+
+      <div className="relative z-10 flex min-h-screen flex-col lg:flex-row">
+        <aside className="relative hidden flex-1 flex-col justify-between overflow-hidden border-r border-white/10 bg-gradient-to-br from-sky-500/20 via-indigo-500/10 to-slate-900/60 p-12 text-slate-100 backdrop-blur-xl lg:flex">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.25),_transparent_60%)] opacity-60" />
+          <div className="relative space-y-8">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-slate-100">
+              <Sparkles className="h-4 w-4" />
+              OpsHub
+            </span>
+            <div className="space-y-4">
+              <h1 className="text-3xl font-semibold leading-tight text-white lg:text-4xl">
+                Command the flow of work with precision and harmony.
+              </h1>
+              <p className="max-w-lg text-sm text-slate-100/80">
+                OpsHub unifies projects, teams, and insights into a single pane of clarity.
+                Activate automation, surface blockers, and keep delivery teams aligned—on every mission.
+              </p>
+            </div>
           </div>
-          
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-                Email address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="Enter your email"
-                className="w-full px-4 py-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-slate-50 focus:bg-white"
-              />
+
+          <div className="relative space-y-4">
+            {benefits.map((benefit) => {
+              const Icon = benefit.icon;
+              return (
+                <div
+                  key={benefit.title}
+                  className="flex items-start gap-4 rounded-2xl border border-white/15 bg-white/10 p-4 text-sm text-slate-100 shadow-xl shadow-sky-500/10"
+                >
+                  <span className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{benefit.title}</p>
+                    <p className="text-xs text-slate-100/70">{benefit.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="relative rounded-2xl border border-white/15 bg-white/10 p-4 text-xs text-slate-100/80">
+            OpsHub © {new Date().getFullYear()} • Operating with security, transparency, and velocity.
+          </div>
+        </aside>
+
+        <main className="flex flex-1 items-center justify-center px-6 py-12 sm:px-10">
+          <div className="w-full max-w-md space-y-10 rounded-3xl border border-white/10 bg-slate-950/70 px-8 py-10 text-sm text-slate-200 shadow-2xl shadow-indigo-500/15 backdrop-blur-xl sm:px-10">
+            <div className="space-y-3 text-center">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-sky-200">
+                Secure Access Control
+              </div>
+              <h2 className="text-2xl font-semibold text-white">Sign in to OpsHub</h2>
+              <p className="text-xs text-slate-300/80">
+                Authenticate with your enterprise credentials to continue to the mission control dashboard.
+              </p>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-slate-700">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Enter your password"
-                className="w-full px-4 py-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-slate-50 focus:bg-white"
-              />
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-300/80">
+                  Work Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="you@company.com"
+                  className="h-12 rounded-xl border border-white/10 bg-white/[0.07] text-sm text-white placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-300/80">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Enter your password"
+                  className="h-12 rounded-xl border border-white/10 bg-white/[0.07] text-sm text-white placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/50"
+                />
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-sky-200 transition hover:text-white"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="h-12 w-full rounded-xl border border-white/20 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition hover:scale-[1.01]"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Authenticating…
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    Continue
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                )}
+              </Button>
+            </form>
+
+            <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-300/80">
+              <span className="font-semibold text-slate-200">Need access?</span>
+              <span>
+                Reach out to your OpsHub administrator or{' '}
+                <button type="button" className="font-semibold text-sky-200 underline-offset-4 hover:text-white hover:underline">
+                  request a workspace
+                </button>
+                .
+              </span>
             </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md" 
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Signing in...
-                </span>
-              ) : 'Sign in'}
-            </Button>
-          </form>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

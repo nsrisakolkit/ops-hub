@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = { title: 'OpsHub', description: 'Operations Hub' }
+export const metadata: Metadata = { title: 'OpsHub', description: 'Operations Hub' }
 
 
 export default function RootLayout({ children }: { children: ReactNode }) {

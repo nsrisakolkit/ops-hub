@@ -1,23 +1,87 @@
 "use client";
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { TenantSwitcher } from './tenant-switcher';
+import { navigation } from './sidebar';
+import { cn } from '@/lib/utils';
 
 export function Topbar() {
+  const pathname = usePathname();
+
   return (
-    <div className="topbar">
-      <div className="flex items-center gap-4">
-        <h1 className="text-xl font-semibold text-slate-800">Dashboard</h1>
-      </div>
-      
-      <div className="flex items-center gap-4">
-        <TenantSwitcher />
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-            <span className="text-white text-sm font-medium">U</span>
+    <header className="sticky top-0 z-30 border-b border-white/5 bg-slate-950/70 px-6 py-4 backdrop-blur lg:px-12">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-1 flex-col gap-3">
+          <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.35em] text-slate-400/80">
+            <span className="inline-flex h-6 w-1.5 rounded-full bg-gradient-to-b from-sky-500 via-blue-500 to-indigo-500" />
+            Ops Intelligence
           </div>
-          <span className="text-sm font-medium text-slate-700">Welcome back!</span>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+              Welcome back, Operator
+            </h1>
+            <p className="mt-1 text-sm text-slate-300/80">
+              Monitor your organisation’s performance and move work forward with real-time insights.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:hidden">
+            <div className="grid grid-cols-2 gap-2">
+              {navigation.slice(0, 4).map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200 transition hover:border-white/30 hover:text-white',
+                      isActive && 'border-sky-400/40 bg-white/10 text-white shadow shadow-sky-500/20'
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {navigation.slice(4).map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200 transition hover:border-white/30 hover:text-white',
+                      isActive && 'border-sky-400/40 bg-white/10 text-white shadow shadow-sky-500/20'
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <TenantSwitcher />
+          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 backdrop-blur">
+            <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-gradient-to-r from-sky-500 to-indigo-500 text-sm font-semibold text-white shadow-lg shadow-sky-500/30">
+              UJ
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="font-medium text-white">Jay Operator</span>
+              <span className="text-xs text-slate-300/80">Operations Lead</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </header>
   );
 }
