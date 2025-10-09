@@ -8,9 +8,10 @@ import {
   Delete,
   UseGuards,
   Query,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto, UpdateUserDto, UserQueryDto, UpdateUserStatusDto } from './users.dto';
+import { CreateUserDto, UpdateUserDto, UserQueryDto, UpdateUserStatusDto, UpdatePasswordDto } from './users.dto';
 import { JwtAuthGuard, RolesGuard } from '../common/guards';
 import { Roles, CurrentUser } from '../common/decorators';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -94,5 +95,23 @@ export class UsersController {
   @Get('username/:username')
   findByUsername(@Param('username') username: string) {
     return this.usersService.findByUsername(username);
+  }
+
+  @Patch(':id/password')
+  updatePassword(
+    @Param('id') id: string,
+    @Body() updatePasswordDto: UpdatePasswordDto,
+    @CurrentUser() currentUser: any,
+  ) {
+    // Users can only update their own password, unless they're an admin
+    if (currentUser.sub !== id && !['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
+      throw new ForbiddenException('You can only update your own password');
+    }
+    
+    return this.usersService.updatePassword(
+      id,
+      updatePasswordDto.currentPassword,
+      updatePasswordDto.newPassword,
+    );
   }
 }

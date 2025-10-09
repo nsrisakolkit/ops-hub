@@ -6,6 +6,9 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting database seed...');
 
+  // Hash password for all users
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
   // Create admin user
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@opshub.com' },
@@ -13,6 +16,7 @@ async function main() {
     create: {
       email: 'admin@opshub.com',
       username: 'admin',
+      password: hashedPassword,
       firstName: 'Admin',
       lastName: 'User',
       role: Role.ADMIN,
@@ -26,6 +30,7 @@ async function main() {
     create: {
       email: 'john.doe@opshub.com',
       username: 'johndoe',
+      password: hashedPassword,
       firstName: 'John',
       lastName: 'Doe',
       role: Role.USER,
@@ -38,6 +43,7 @@ async function main() {
     create: {
       email: 'jane.smith@opshub.com',
       username: 'janesmith',
+      password: hashedPassword,
       firstName: 'Jane',
       lastName: 'Smith',
       role: Role.USER,

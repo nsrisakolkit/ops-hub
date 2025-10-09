@@ -36,6 +36,11 @@ export class CreateUserDto {
   @Transform(({ value }) => value?.toLowerCase()?.trim())
   username: string;
 
+  @IsString()
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
+  @MaxLength(128, { message: 'Password must not exceed 128 characters' })
+  password: string;
+
   @IsOptional()
   @IsString({ message: 'First name must be a string' })
   @MinLength(1, { message: 'First name cannot be empty' })
@@ -176,4 +181,16 @@ export class UserResponseDto {
 export class UpdateUserStatusDto {
   @IsBoolean({ message: 'isActive must be a boolean value' })
   isActive: boolean;
+}
+
+// DTO for password updates
+export class UpdatePasswordDto {
+  @IsString()
+  @MinLength(6, { message: 'Current password must be at least 6 characters long' })
+  currentPassword: string;
+
+  @IsString()
+  @MinLength(6, { message: 'New password must be at least 6 characters long' })
+  @MaxLength(128, { message: 'New password must not exceed 128 characters' })
+  newPassword: string;
 }

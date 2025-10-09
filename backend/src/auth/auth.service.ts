@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../database';
 import { AppConfigService } from '../config';
 
@@ -22,10 +23,14 @@ export class AuthService {
     });
 
     if (user && user.isActive) {
-      // In a real app, you'd hash and compare passwords
-      // For now, we'll skip password validation
-      const { ...result } = user;
-      return result;
+      // Compare the provided password with the hashed password
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      
+      if (isPasswordValid) {
+        // Remove password from the returned user object
+        const { password: _, ...result } = user;
+        return result;
+      }
     }
     return null;
   }
@@ -72,5 +77,34 @@ export class AuthService {
     // In a real app, you might want to blacklist the token
     // For now, we'll just log the logout
     console.log(`User ${userId} logged out`);
+  }
+
+  async hashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return bcrypt.hash(password, saltRounds);
+  }
+
+  async createUser(userData: {
+    email: string;
+    username: string;
+    password: string;
+    firstName?: string;
+    lastName?: string;
+    role?: any;
+  }): Promise<any> {
+    const hashedPassword = await this.hashPassword(userData.password);
+    
+    const user = await this.prisma.user.create({
+      data: {
+        ...userData,
+        password: hashedPassword,
+        email: userData.email.toLowerCase(),
+        username: userData.username.toLowerCase(),
+      },
+    });
+
+    // Remove password from response
+    const { password: _, ...userResponse } = user;
+    return userResponse;
   }
 }

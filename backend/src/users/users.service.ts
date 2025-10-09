@@ -27,8 +27,14 @@ export class UsersService {
       throw new ConflictException('Username already exists');
     }
 
+    // Hash the password before storing
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
     return this.prisma.user.create({
-      data: createUserDto,
+      data: {
+        ...createUserDto,
+        password: hashedPassword,
+      },
       select: {
         id: true,
         email: true,
@@ -282,6 +288,42 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: { isActive },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async updatePassword(id: string, currentPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      throw new ConflictException('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { password: hashedNewPassword },
       select: {
         id: true,
         email: true,
