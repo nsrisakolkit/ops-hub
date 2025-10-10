@@ -1,15 +1,22 @@
 # Ops Hub - Project Management Platform
 
-A full-stack project management application built with NestJS (backend) and modern frontend framework.
+**Getting started**
+1. `git clone <repository-url>`
+2. `cd ops-hub`
+3. `cp backend/.env.example backend/.env` (adjust secrets as needed)
+4. `docker compose up --build`
+5. Open http://localhost:3001
+
+The stack comes up with PostgreSQL, Redis, the NestJS backend, and the Next.js frontend. Press `Ctrl+C` to stop; use `docker compose down` to remove containers (volumes stay unless `--volumes` is passed).
 
 ## Project Structure
 
 ```
 ops-hub/
-├── backend/          # NestJS API server
-├── frontend/         # Frontend application (to be added)
-├── docker-compose.yml # Development services
-└── package.json      # Workspace configuration
+├── backend/             # NestJS API (Prisma, Redis, JWT auth, REST + GraphQL)
+├── frontend/            # Next.js 15 App Router frontend (BFF + Tailwind)
+├── docker-compose.yml   # Local Docker workflow (frontend, backend, db, redis)
+└── package.json         # Workspace scripts for combined tasks
 ```
 
 ## Quick Start
@@ -20,15 +27,7 @@ ops-hub/
 
 ### One-Click Development Environment
 
-Everything (Postgres, Redis, NestJS API, Next.js frontend) is orchestrated via Docker Compose:
-
-```bash
-git clone <repository-url>
-cd ops-hub
-docker compose up --build
-```
-
-On the first run the containers will install dependencies, run migrations, seed sample data, and start both servers in watch mode. Named volumes keep `node_modules` cached, so subsequent restarts are fast.
+`docker compose up --build` orchestrates Postgres, Redis, the NestJS API (`backend`), and the BFF-style Next.js frontend (`frontend`). On first run, dependencies are installed, Prisma migrations + seed execute, and both servers start in watch mode. Named volumes cache dependencies for faster restarts.
 
 Services will be available at:
 
@@ -38,29 +37,30 @@ Services will be available at:
 - PostgreSQL: `localhost:5433`
 - Redis: `localhost:6379`
 
-Press `Ctrl+C` to stop the stack, or `docker compose down` to stop and remove the containers.
-
 ### Available Scripts
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Start both backend and frontend in development mode |
-| `npm run dev:backend` | Start only backend development server |
-| `npm run dev:frontend` | Start only frontend development server |
-| `npm run build` | Build both applications for production |
-| `npm run test` | Run tests for both applications |
-| `npm run lint` | Lint both applications |
-| `npm run docker:up` | Start development databases (PostgreSQL, Redis) |
-| `npm run docker:down` | Stop development databases |
-| `npm run prisma:studio` | Open Prisma Studio for database management |
+| `npm run dev` | Start backend + frontend locally (requires Node 18+) |
+| `npm run dev:backend` | Start the NestJS API in watch mode |
+| `npm run dev:frontend` | Start the Next.js frontend |
+| `npm run build` | Build both workspaces |
+| `npm run test` | Run backend + frontend test suites |
+| `npm run lint` | Lint backend + frontend |
+| `npm run docker:up` | Start the docker-compose stack in the background |
+| `npm run docker:down` | Stop and remove compose containers |
+| `npm run prisma:studio` | Open Prisma Studio against the running Postgres |
 
-### Development URLs
+### Running Outside Docker
 
-- **Backend API**: http://localhost:3000
-- **API Documentation**: http://localhost:3000/api
-- **Prisma Studio**: http://localhost:5555
-- **PostgreSQL**: localhost:5432
-- **Redis**: localhost:6379
+If you prefer to run the apps without Docker:
+
+1. Start dependencies: `npm run docker:up`
+2. Copy backend env: `cp backend/.env.example backend/.env`
+3. Install deps: `npm install`
+4. In one terminal `npm run dev:backend`, in another `npm run dev:frontend`
+
+The frontend relies on BFF route handlers under `/app/api/*` that proxy requests to the backend and handle token refreshes. Set `BACKEND_API_URL` (e.g. `http://localhost:3000/api`) in `frontend/.env.local` when running outside Docker.
 
 ## Backend (NestJS)
 
@@ -96,7 +96,7 @@ backend/
 
 ## Frontend
 
-*Frontend application will be added here*
+The frontend lives in `frontend/` and is a Next.js 15 App Router application with TypeScript and Tailwind CSS. All data access goes through internal `/app/api/*` route handlers (Backend-for-Frontend pattern) which proxy to the NestJS API, manage HttpOnly cookies for access/refresh tokens, and auto-refresh on 401 responses. UI routes default to server components; client components only where interactivity is required.
 
 ## Contributing
 

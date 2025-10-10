@@ -43,11 +43,6 @@ ops-hub/
 │  ├─ users/
 │  ├─ projects/
 │  ├─ tasks/
-│  ├─ files/
-│  ├─ webhooks/
-│  ├─ queue/             # BullMQ Module, processors
-│  ├─ gql/               # GQL module (code-first), resolvers, DTOs
-│  ├─ rest/              # REST controllers, DTOs
 │  ├─ cache/             # CacheModule wrapper (redis)
 │  ├─ logging/           # nestjs-pino setup
 │  └─ metrics/           # healthchecks, /metrics, readiness/liveness
@@ -77,47 +72,41 @@ ops-hub/
 
 ## 🚀 Quick Start
 
-### 1. Clone and Install
+### Running with Docker Compose (recommended)
+
+From the repository root:
 
 ```bash
+cp backend/.env.example backend/.env
+docker compose up --build
+```
+
+The backend boots alongside the Next.js frontend, PostgreSQL, and Redis. Swagger docs live at http://localhost:3000/api while the frontend proxies through `/app/api/*` route handlers.
+
+### Running the backend standalone
+
+```bash
+# Clone and install (from repo root)
 git clone <repository-url>
-cd ops-hub
+cd ops-hub/backend
 npm install
-```
 
-### 2. Environment Setup
-
-```bash
+# Environment
 cp .env.example .env
-# Edit .env with your configuration
-```
+# edit values as needed
 
-### 3. Start Database Services
+# Ensure Postgres + Redis are running locally or via `npm run docker:up` from repo root
 
-```bash
-npm run docker:up
-```
-
-### 4. Setup Database
-
-```bash
-# Generate Prisma client
+# Prepare database
 npm run db:generate
-
-# Push database schema
 npm run db:push
-
-# Seed database with initial data
 npm run db:seed
-```
 
-### 5. Start Development Server
-
-```bash
+# Start the NestJS dev server
 npm run start:dev
 ```
 
-The application will be available at:
+Key endpoints:
 - API: http://localhost:3000/api
 - Health: http://localhost:3000/health
 - Metrics: http://localhost:3000/metrics
@@ -208,13 +197,13 @@ The application provides several health check endpoints:
 
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f app
+docker compose logs -f backend
 
 # Stop services
-docker-compose down
+docker compose down
 ```
 
 ### Production Deployment
