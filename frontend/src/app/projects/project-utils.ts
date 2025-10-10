@@ -1,4 +1,12 @@
-import type { Project, ProjectDetail, ProjectMember, ProjectRole, ProjectTask } from './types';
+import type {
+  Project,
+  ProjectDetail,
+  ProjectMember,
+  ProjectRole,
+  ProjectTask,
+  TaskDetail,
+  UserSummary,
+} from './types';
 import { PROJECT_ROLES } from './types';
 
 function normaliseRole(value: unknown): ProjectRole {
@@ -10,6 +18,28 @@ function normaliseRole(value: unknown): ProjectRole {
   }
 
   return 'MEMBER';
+}
+
+function toUserSummary(candidate: unknown): UserSummary {
+  if (!candidate || typeof candidate !== 'object') {
+    return { id: '' };
+  }
+
+  const record = candidate as Record<string, unknown>;
+
+  return {
+    id: typeof record.id === 'string' ? record.id : '',
+    username: typeof record.username === 'string' ? record.username : undefined,
+    firstName:
+      typeof record.firstName === 'string' || record.firstName === null
+        ? (record.firstName as string | null)
+        : undefined,
+    lastName:
+      typeof record.lastName === 'string' || record.lastName === null
+        ? (record.lastName as string | null)
+        : undefined,
+    email: typeof record.email === 'string' ? record.email : undefined,
+  };
 }
 
 function toProject(candidate: unknown): Project | null {
@@ -119,9 +149,7 @@ function toMember(candidate: unknown): ProjectMember | null {
     return null;
   }
 
-  const user = record.user && typeof record.user === 'object'
-    ? (record.user as Record<string, unknown>)
-    : {};
+  const user = toUserSummary(record.user);
 
   return {
     id: record.id,
@@ -132,20 +160,8 @@ function toMember(candidate: unknown): ProjectMember | null {
         : typeof record.joinedAt === 'number'
           ? new Date(record.joinedAt).toISOString()
           : '',
-    userId: typeof record.userId === 'string' ? record.userId : '',
-    user: {
-      id: typeof user.id === 'string' ? user.id : '',
-      username: typeof user.username === 'string' ? user.username : undefined,
-      firstName:
-        typeof user.firstName === 'string' || user.firstName === null
-          ? (user.firstName as string | null)
-          : undefined,
-      lastName:
-        typeof user.lastName === 'string' || user.lastName === null
-          ? (user.lastName as string | null)
-          : undefined,
-      email: typeof user.email === 'string' ? user.email : undefined,
-    },
+    userId: typeof record.userId === 'string' ? record.userId : user.id,
+    user,
   };
 }
 
@@ -159,9 +175,18 @@ function toTask(candidate: unknown): ProjectTask | null {
     return null;
   }
 
-  const assignee = record.assignee && typeof record.assignee === 'object'
-    ? (record.assignee as Record<string, unknown>)
-    : null;
+  const assignee =
+    record.assignee && typeof record.assignee === 'object'
+      ? toUserSummary(record.assignee)
+      : null;
+  const creator =
+    record.creator && typeof record.creator === 'object'
+      ? toUserSummary(record.creator)
+      : undefined;
+  const projectSummary =
+    record.project && typeof record.project === 'object'
+      ? (record.project as Record<string, unknown>)
+      : undefined;
 
   return {
     id: record.id,
@@ -174,21 +199,36 @@ function toTask(candidate: unknown): ProjectTask | null {
         : record.dueDate === null
           ? null
           : undefined,
-    assignee: assignee
-      ? {
-          id: typeof assignee.id === 'string' ? assignee.id : '',
-          username:
-            typeof assignee.username === 'string' ? assignee.username : undefined,
-          firstName:
-            typeof assignee.firstName === 'string' || assignee.firstName === null
-              ? (assignee.firstName as string | null)
-              : undefined,
-          lastName:
-            typeof assignee.lastName === 'string' || assignee.lastName === null
-              ? (assignee.lastName as string | null)
-              : undefined,
-        }
-      : undefined,
+    assignee,
+    description:
+      typeof record.description === 'string'
+        ? record.description
+        : record.description === null
+          ? null
+          : undefined,
+    createdAt:
+      typeof record.createdAt === 'string'
+        ? record.createdAt
+        : typeof record.createdAt === 'number'
+          ? new Date(record.createdAt).toISOString()
+          : undefined,
+    updatedAt:
+      typeof record.updatedAt === 'string'
+        ? record.updatedAt
+        : typeof record.updatedAt === 'number'
+          ? new Date(record.updatedAt).toISOString()
+          : undefined,
+    project:
+      projectSummary && typeof projectSummary.id === 'string'
+        ? {
+            id: projectSummary.id,
+            name: typeof projectSummary.name === 'string' ? projectSummary.name : undefined,
+          }
+        : undefined,
+    creator,
+    creatorId: typeof record.creatorId === 'string' ? record.creatorId : creator?.id,
+    assigneeId: typeof record.assigneeId === 'string' ? record.assigneeId : assignee?.id ?? null,
+    projectId: typeof record.projectId === 'string' ? record.projectId : projectSummary?.id,
   };
 }
 
@@ -208,8 +248,8 @@ function toFiles(candidate: unknown): ProjectDetail['files'] {
       }
       const uploader =
         record.uploader && typeof record.uploader === 'object'
-          ? (record.uploader as Record<string, unknown>)
-          : null;
+          ? toUserSummary(record.uploader)
+          : undefined;
       return {
         id: record.id,
         filename: typeof record.filename === 'string' ? record.filename : '',
@@ -221,21 +261,7 @@ function toFiles(candidate: unknown): ProjectDetail['files'] {
             : typeof record.createdAt === 'number'
               ? new Date(record.createdAt).toISOString()
               : '',
-        uploader: uploader
-          ? {
-              id: typeof uploader.id === 'string' ? uploader.id : '',
-              username:
-                typeof uploader.username === 'string' ? uploader.username : undefined,
-              firstName:
-                typeof uploader.firstName === 'string' || uploader.firstName === null
-                  ? (uploader.firstName as string | null)
-                  : undefined,
-              lastName:
-                typeof uploader.lastName === 'string' || uploader.lastName === null
-                  ? (uploader.lastName as string | null)
-                  : undefined,
-            }
-          : undefined,
+        uploader,
       };
     })
     .filter((file): file is NonNullable<ProjectDetail['files']>[number] => Boolean(file));
@@ -254,11 +280,15 @@ export function extractProjectDetail(payload: unknown): ProjectDetail | null {
   }
 
   const members = Array.isArray(source.members)
-    ? (source.members as unknown[]).map((entry) => toMember(entry)).filter((m): m is ProjectMember => Boolean(m))
+    ? (source.members as unknown[])
+        .map((entry) => toMember(entry))
+        .filter((m): m is ProjectMember => Boolean(m))
     : [];
 
   const tasks = Array.isArray(source.tasks)
-    ? (source.tasks as unknown[]).map((entry) => toTask(entry)).filter((t): t is ProjectTask => Boolean(t))
+    ? (source.tasks as unknown[])
+        .map((entry) => toTask(entry))
+        .filter((t): t is ProjectTask => Boolean(t))
     : [];
 
   const files = toFiles(source.files);
@@ -266,15 +296,66 @@ export function extractProjectDetail(payload: unknown): ProjectDetail | null {
   return {
     ...project,
     updatedAt: project.updatedAt ?? project.createdAt,
-    description:
-      typeof source.description === 'string'
-        ? source.description
-        : source.description === null
-          ? null
-          : project.description ?? null,
     members,
     tasks,
     files,
+  };
+}
+
+export function extractTask(payload: unknown): ProjectTask | null {
+  return toTask(payload);
+}
+
+export function extractTaskDetail(payload: unknown): TaskDetail | null {
+  const task = toTask(payload);
+  if (task && task.project) {
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description ?? null,
+      status: task.status,
+      priority: task.priority ?? null,
+      dueDate: task.dueDate ?? null,
+      createdAt: task.createdAt ?? '',
+      updatedAt: task.updatedAt ?? task.createdAt ?? '',
+      project: {
+        id: task.project.id,
+        name: task.project.name ?? '',
+      },
+      projectId: task.projectId ?? task.project.id,
+      creator: task.creator,
+      assignee: task.assignee ?? null,
+    };
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const record = payload as Record<string, unknown>;
+  const data = record.data && typeof record.data === 'object' ? record.data : payload;
+  const parsed = toTask(data);
+
+  if (!parsed || !parsed.project) {
+    return null;
+  }
+
+  return {
+    id: parsed.id,
+    title: parsed.title,
+    description: parsed.description ?? null,
+    status: parsed.status,
+    priority: parsed.priority ?? null,
+    dueDate: parsed.dueDate ?? null,
+    createdAt: parsed.createdAt ?? '',
+    updatedAt: parsed.updatedAt ?? parsed.createdAt ?? '',
+    project: {
+      id: parsed.project.id,
+      name: parsed.project.name ?? '',
+    },
+    projectId: parsed.projectId ?? parsed.project.id,
+    creator: parsed.creator,
+    assignee: parsed.assignee ?? null,
   };
 }
 
@@ -293,8 +374,4 @@ export function formatDate(value: string | number | Date | null | undefined, opt
 
 export function formatDateTime(value: string | number | Date | null | undefined) {
   return formatDate(value, { dateStyle: 'medium', timeStyle: 'short' });
-}
-
-export function extractTask(payload: unknown): ProjectTask | null {
-  return toTask(payload);
 }

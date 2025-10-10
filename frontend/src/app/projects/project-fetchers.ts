@@ -1,14 +1,15 @@
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { extractProjectDetail, normaliseProjects } from './project-utils';
+import { extractProjectDetail, extractTaskDetail, normaliseProjects } from './project-utils';
 import type {
   MeResponse,
   Project,
   ProjectDetail,
   ResponseEnvelope,
+  TaskDetail,
 } from './types';
 
-async function fetchWithCookies(path: string): Promise<Response> {
+export async function fetchWithCookies(path: string): Promise<Response> {
   const [cookieStore, headersList] = await Promise.all([cookies(), headers()]);
 
   const cookieHeader = cookieStore
@@ -104,4 +105,31 @@ export async function fetchProjectDetail(projectId: string): Promise<ProjectDeta
   }
 
   return extractProjectDetail(payload);
+}
+
+export async function fetchTaskDetail(taskId: string): Promise<TaskDetail | null> {
+  const response = await fetchWithCookies(`/api/tasks/${taskId}`);
+
+  if (response.status === 401) {
+    redirect('/login');
+  }
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const envelope = (payload ?? {}) as ResponseEnvelope<unknown>;
+    const message =
+      typeof envelope.error === 'string'
+        ? envelope.error
+        : typeof envelope.message === 'string'
+          ? envelope.message
+          : 'Unable to load task details.';
+    throw new Error(message);
+  }
+
+  return extractTaskDetail(payload);
 }

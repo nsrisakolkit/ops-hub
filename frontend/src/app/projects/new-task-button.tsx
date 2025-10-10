@@ -4,9 +4,7 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useMemo, useState, useTransition } from 'react';
 import { createTask } from './project-api';
 import type { ProjectMember } from './types';
-
-const TASK_STATUSES = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'CANCELLED'] as const;
-const TASK_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
+import { TASK_PRIORITIES, TASK_STATUSES } from './types';
 
 interface TaskFormState {
   title: string;

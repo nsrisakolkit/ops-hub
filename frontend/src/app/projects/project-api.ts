@@ -6,6 +6,7 @@ import type {
   ProjectRole,
   ProjectTask,
   ResponseEnvelope,
+  UpdateTaskInput,
   UserSummary,
 } from './types';
 
@@ -166,6 +167,40 @@ export async function deleteTask(taskId: string): Promise<DeleteTaskResult> {
     return normaliseError(response.status, payload, 'Unable to delete task.');
   } catch (error) {
     return normaliseException(error, 'Something went wrong while deleting the task.');
+  }
+}
+
+type UpdateTaskSuccess = {
+  success: true;
+  task: ProjectTask;
+};
+
+export type UpdateTaskResult = UpdateTaskSuccess | ApiErrorResult;
+
+export async function updateTask(taskId: string, input: UpdateTaskInput): Promise<UpdateTaskResult> {
+  try {
+    const response = await fetch(`/api/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+      cache: 'no-store',
+    });
+
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      return normaliseError(response.status, payload, 'Unable to update task.');
+    }
+
+    const task = extractTask(payload);
+
+    if (!task) {
+      return normaliseError(502, payload, 'Backend returned an unexpected task response.');
+    }
+
+    return { success: true, task };
+  } catch (error) {
+    return normaliseException(error, 'Something went wrong while updating the task.');
   }
 }
 

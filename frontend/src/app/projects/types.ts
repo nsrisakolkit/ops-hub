@@ -44,6 +44,12 @@ export interface CreateTaskInput {
   dueDate?: string | null;
 }
 
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE' | 'CANCELLED';
+export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
+export const TASK_STATUSES: readonly TaskStatus[] = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'CANCELLED'];
+export const TASK_PRIORITIES: readonly TaskPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+
 export interface ProjectMember {
   id: string;
   role: ProjectRole;
@@ -70,6 +76,22 @@ export interface ProjectTask {
     firstName?: string | null;
     lastName?: string | null;
   } | null;
+  description?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  project?: {
+    id: string;
+    name?: string;
+  };
+  creator?: {
+    id: string;
+    username?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+  };
+  creatorId?: string;
+  assigneeId?: string | null;
+  projectId?: string;
 }
 
 export interface ProjectDetail extends Project {
@@ -97,4 +119,31 @@ export interface UserSummary {
   email?: string;
   firstName?: string | null;
   lastName?: string | null;
+}
+
+export interface TaskDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string | null;
+  dueDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  project: {
+    id: string;
+    name: string;
+  };
+  projectId: string;
+  creator?: UserSummary;
+  assignee?: UserSummary | null;
+}
+
+export interface UpdateTaskInput {
+  title?: string;
+  description?: string | null;
+  status?: string;
+  priority?: string;
+  dueDate?: string | null;
+  assigneeId?: string | null;
 }
