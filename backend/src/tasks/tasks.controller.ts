@@ -20,6 +20,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CreateTaskDto, UpdateTaskDto, TaskQueryDto } from './tasks.dto';
 
@@ -64,6 +65,36 @@ export class TasksController {
     summary: 'Get all tasks with optional filtering and pagination',
   })
   @ApiResponse({ status: 200, description: 'Tasks retrieved successfully' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    example: 'IN_PROGRESS',
+    description: 'Filter by task status',
+  })
+  @ApiQuery({
+    name: 'priority',
+    required: false,
+    example: 'HIGH',
+    description: 'Filter by task priority',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    example: 'Design',
+    description: 'Free text search across title and description',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    example: 'dueDate',
+    description: 'Sort field (createdAt, updatedAt, dueDate, priority, status, title)',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    example: 'ASC',
+    description: 'Sort order (ASC or DESC)',
+  })
   findAll(@Query() query: TaskQueryDto) {
     return this.tasksService.findAll(query);
   }

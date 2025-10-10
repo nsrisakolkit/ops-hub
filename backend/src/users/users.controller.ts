@@ -126,7 +126,20 @@ export class UsersController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update an existing user' })
   @ApiParam({ name: 'id', description: 'User identifier' })
-  @ApiBody({ type: UpdateUserDto })
+  @ApiBody({
+    type: UpdateUserDto,
+    examples: {
+      profileUpdate: {
+        summary: 'Update profile info',
+        value: {
+          firstName: 'Avery',
+          lastName: 'Chen',
+          role: 'ADMIN',
+          isActive: true,
+        },
+      },
+    },
+  })
   @ApiOkResponse({ type: UserResponseDto })
   @ApiBadRequestResponse({ description: 'Validation error' })
   @ApiNotFoundResponse({ description: 'User not found' })
@@ -187,7 +200,17 @@ export class UsersController {
   @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Activate or deactivate a user' })
   @ApiParam({ name: 'id', description: 'User identifier' })
-  @ApiBody({ type: UpdateUserStatusDto })
+  @ApiBody({
+    type: UpdateUserStatusDto,
+    examples: {
+      deactivate: {
+        summary: 'Deactivate user account',
+        value: {
+          isActive: false,
+        },
+      },
+    },
+  })
   @ApiOkResponse({ type: UserResponseDto })
   @ApiNotFoundResponse({ description: 'User not found' })
   updateUserStatus(
@@ -220,7 +243,18 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update a user password' })
   @ApiParam({ name: 'id', description: 'User identifier' })
-  @ApiBody({ type: UpdatePasswordDto })
+  @ApiBody({
+    type: UpdatePasswordDto,
+    examples: {
+      rotatePassword: {
+        summary: 'Rotate password',
+        value: {
+          currentPassword: 'CurrentPass123!',
+          newPassword: 'N3wStrongPass!456',
+        },
+      },
+    },
+  })
   @ApiOkResponse({
     description: 'Password updated successfully',
     type: UserResponseDto,

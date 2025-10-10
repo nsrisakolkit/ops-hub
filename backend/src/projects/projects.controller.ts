@@ -95,6 +95,14 @@ export class ProjectsController {
           status: 'INACTIVE',
         },
       },
+      renameProject: {
+        summary: 'Rename project and set active',
+        value: {
+          name: 'Revenue Dashboard Rollout',
+          status: 'ACTIVE',
+          description: 'Co-ordinate phased launch with finance stakeholders',
+        },
+      },
     },
   })
   update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
@@ -137,6 +145,13 @@ export class ProjectsController {
           role: 'ADMIN',
         },
       },
+      inviteMember: {
+        summary: 'Invite contributor as MEMBER',
+        value: {
+          userId: 'c9876543-21ba-4fed-c210-9876543210ff',
+          role: 'MEMBER',
+        },
+      },
     },
   })
   addMember(@Param('id') id: string, @Body() memberDto: ProjectMemberDto) {
@@ -158,6 +173,12 @@ export class ProjectsController {
         summary: 'Change member role',
         value: {
           role: 'VIEWER',
+        },
+      },
+      escalateToAdmin: {
+        summary: 'Promote collaborator to admin',
+        value: {
+          role: 'ADMIN',
         },
       },
     },
