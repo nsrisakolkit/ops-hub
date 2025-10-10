@@ -1,30 +1,32 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const ACCESS_COOKIE = 'ops_access_token';
+
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('auth-token');
+  const token = request.cookies.get(ACCESS_COOKIE);
   const { pathname } = request.nextUrl;
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/login', '/api/auth/login'];
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  const publicRoutes = ['/login'];
+  const isPublicRoute = publicRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
 
   // If it's a public route, allow access
   if (isPublicRoute) {
     return NextResponse.next();
   }
 
-  // If accessing root, redirect based on auth status
+  // Redirect root based on auth state
   if (pathname === '/') {
-    if (token) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    } else {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+    return NextResponse.redirect(
+      new URL(token ? '/dashboard' : '/login', request.url),
+    );
   }
 
-  // If no token and trying to access protected route, redirect to login
-  if (!token && !isPublicRoute) {
+  // Enforce authentication for protected routes
+  if (!token) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

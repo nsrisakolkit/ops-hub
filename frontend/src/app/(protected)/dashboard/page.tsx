@@ -1,92 +1,138 @@
 import {
   Activity,
   ArrowUpRight,
-  BarChart3,
+  CheckCircle2,
   CheckSquare,
   Clock,
   FolderKanban,
-  Percent,
   Sparkles,
   Users,
 } from 'lucide-react';
+import { fetchFromBff } from '@/lib/server/bff-fetch';
+import type { UserProjectMembership, UserTask } from '@/types/api';
 
-const metricCards = [
-  {
-    label: 'Active Projects',
-    value: '12',
-    change: '+18.2%',
-    icon: FolderKanban,
-    accent: 'from-sky-500/20 to-sky-500/0',
-  },
-  {
-    label: 'Tasks In Motion',
-    value: '24',
-    change: '+6.4%',
-    icon: CheckSquare,
-    accent: 'from-emerald-500/20 to-emerald-500/0',
-  },
-  {
-    label: 'Team Velocity',
-    value: '92%',
-    change: '+4.1%',
-    icon: Users,
-    accent: 'from-indigo-500/20 to-indigo-500/0',
-  },
-  {
-    label: 'On-time Delivery',
-    value: '98%',
-    change: '+2.6%',
-    icon: Percent,
-    accent: 'from-amber-500/20 to-amber-500/0',
-  },
-];
+function formatStatus(status: string) {
+  return status
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/^\w/, (char) => char.toUpperCase());
+}
 
-const activeProjects = [
-  {
-    name: 'Cosmic Commerce Revamp',
-    category: 'Customer Experience',
-    status: 'In flight',
-    progress: 78,
-    owner: 'Team Aurora',
-  },
-  {
-    name: 'Mobile Field Operations',
-    category: 'Platform',
-    status: 'Planning',
-    progress: 42,
-    owner: 'Velocity Squad',
-  },
-  {
-    name: 'API Federation',
-    category: 'Integrations',
-    status: 'QA Ready',
-    progress: 64,
-    owner: 'Edge Services',
-  },
-];
+function formatDate(value?: string | null) {
+  if (!value) {
+    return '—';
+  }
+  try {
+    return new Intl.DateTimeFormat('en', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+}
 
-const activityFeed = [
-  {
-    icon: Activity,
-    title: 'Incident response playbook updated',
-    timestamp: '12m ago',
-    meta: 'Automation Suite',
-  },
-  {
-    icon: Clock,
-    title: 'Ops review scheduled for Tuesday',
-    timestamp: '58m ago',
-    meta: 'Leadership Sync',
-  },
-  {
-    icon: BarChart3,
-    title: 'KPI baseline recalculated',
-    timestamp: '2h ago',
-    meta: 'Analytics Engine',
-  },
-];
+async function loadUserProjects(): Promise<UserProjectMembership[]> {
+  const { data, ok } = await fetchFromBff<UserProjectMembership[]>(
+    '/api/users/me/projects',
+  );
+  if (!ok || !data) {
+    return [];
+  }
+  return data;
+}
 
-export default function DashboardPage() {
+async function loadUserTasks(): Promise<UserTask[]> {
+  const { data, ok } = await fetchFromBff<UserTask[]>('/api/users/me/tasks');
+  if (!ok || !data) {
+    return [];
+  }
+  return data;
+}
+
+function deriveActivityIcon(task: UserTask) {
+  switch (task.status.toUpperCase()) {
+    case 'DONE':
+      return CheckCircle2;
+    case 'IN_PROGRESS':
+    case 'IN_REVIEW':
+      return Activity;
+    default:
+      return Clock;
+  }
+}
+
+export default async function DashboardPage() {
+  const [projects, tasks] = await Promise.all([
+    loadUserProjects(),
+    loadUserTasks(),
+  ]);
+
+  const activeProjects = projects.filter(
+    (membership) => membership.project.status !== 'ARCHIVED',
+  );
+  const inProgressTasks = tasks.filter((task) =>
+    ['IN_PROGRESS', 'IN_REVIEW'].includes(task.status.toUpperCase()),
+  );
+  const completedTasks = tasks.filter(
+    (task) => task.status.toUpperCase() === 'DONE',
+  );
+  const backlogTasks = tasks.filter(
+    (task) => task.status.toUpperCase() === 'TODO',
+  );
+
+  const totalProjects = projects.length;
+  const totalTasks = tasks.length;
+
+  const metrics = [
+    {
+      label: 'Active Projects',
+      value: activeProjects.length.toString(),
+      change: totalProjects
+        ? `${Math.round((activeProjects.length / totalProjects) * 100)}% engaged`
+        : '—',
+      icon: FolderKanban,
+      accent: 'from-sky-500/20 to-sky-500/0',
+    },
+    {
+      label: 'Tasks In Motion',
+      value: inProgressTasks.length.toString(),
+      change: totalTasks
+        ? `${Math.round((inProgressTasks.length / totalTasks) * 100)}% of workload`
+        : '—',
+      icon: CheckSquare,
+      accent: 'from-emerald-500/20 to-emerald-500/0',
+    },
+    {
+      label: 'Completed Tasks',
+      value: completedTasks.length.toString(),
+      change: totalTasks
+        ? `${Math.round((completedTasks.length / totalTasks) * 100)}% delivered`
+        : '—',
+      icon: CheckCircle2,
+      accent: 'from-indigo-500/20 to-indigo-500/0',
+    },
+    {
+      label: 'Backlog Items',
+      value: backlogTasks.length.toString(),
+      change: totalTasks
+        ? `${Math.round((backlogTasks.length / totalTasks) * 100)}% queued`
+        : '—',
+      icon: Users,
+      accent: 'from-amber-500/20 to-amber-500/0',
+    },
+  ];
+
+  const topProjects = projects.slice(0, 3);
+  const recentActivity = tasks
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    )
+    .slice(0, 3);
+
   return (
     <div className="space-y-10">
       <section className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-8 shadow-2xl shadow-sky-500/10 backdrop-blur-lg sm:p-10">
@@ -97,44 +143,66 @@ export default function DashboardPage() {
               Live Status
             </span>
             <h2 className="text-2xl font-semibold text-white sm:text-3xl">
-              Operational health is <span className="text-sky-200">stable</span> and trending up.
+              Operational health is{' '}
+              <span className="text-sky-200">
+                {activeProjects.length ? 'engaged' : 'warming up'}
+              </span>{' '}
+              with {inProgressTasks.length} items in motion.
             </h2>
             <p className="text-sm text-slate-200/80">
-              Monitor throughput, unblock delivery, and orchestrate the next steps with a command center built for high-performing operations teams.
+              Monitor throughput, unblock delivery, and orchestrate the next steps with a command center
+              built for high-performing operations teams.
             </p>
           </div>
 
           <div className="grid gap-4 rounded-2xl border border-white/10 bg-slate-950/60 p-6 text-sm shadow-xl shadow-indigo-500/20">
             <div className="flex items-center justify-between text-slate-200">
-              <span className="text-xs uppercase tracking-[0.2em]">Flow Efficiency</span>
+              <span className="text-xs uppercase tracking-[0.2em]">
+                Delivery Health
+              </span>
               <ArrowUpRight className="h-4 w-4 text-emerald-300" />
             </div>
-            <div className="text-3xl font-semibold text-white">94%</div>
+            <div className="text-3xl font-semibold text-white">
+              {totalTasks
+                ? `${Math.round((completedTasks.length / totalTasks) * 100)}%`
+                : '—'}
+            </div>
             <div className="w-full rounded-full bg-white/10">
-              <div className="h-[6px] rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-400" style={{ width: '94%' }} />
+              <div
+                className="h-[6px] rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-400"
+                style={{
+                  width: totalTasks
+                    ? `${Math.round((completedTasks.length / totalTasks) * 100)}%`
+                    : '0%',
+                }}
+              />
             </div>
             <p className="text-xs text-slate-400">
-              Up 4.6% in the last sprint. Capacity is aligned and bottlenecks are being resolved 2x faster.
+              {completedTasks.length} of {totalTasks} tasks delivered across your current portfolio.
             </p>
           </div>
         </div>
       </section>
 
       <section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        {metricCards.map((metric) => {
+        {metrics.map((metric) => {
           const Icon = metric.icon;
           return (
             <div
               key={metric.label}
-              className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/60 p-6 shadow-lg shadow-sky-500/10 transition hover:border-white/30 hover:shadow-sky-500/30`}
+              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/60 p-6 shadow-lg shadow-sky-500/10 transition hover:border-white/30 hover:shadow-sky-500/30"
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${metric.accent} opacity-0 transition group-hover:opacity-100`} />
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${metric.accent} opacity-0 transition group-hover:opacity-100`}
+              />
               <div className="relative flex items-start justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
                     {metric.label}
                   </p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{metric.value}</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">
+                    {metric.value}
+                  </p>
                   <p className="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-emerald-300">
                     <ArrowUpRight className="h-3 w-3" />
                     {metric.change}
@@ -154,7 +222,9 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-white">Active flight plans</h3>
-              <p className="text-sm text-slate-300/80">Projects sequencing in the next 4 weeks</p>
+              <p className="text-sm text-slate-300/80">
+                Projects sequencing in the next delivery window.
+              </p>
             </div>
             <button className="inline-flex items-center gap-2 rounded-xl border border-slate-800/60 bg-white/5 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-white/40 hover:text-white">
               View roadmap
@@ -162,34 +232,55 @@ export default function DashboardPage() {
             </button>
           </div>
           <div className="mt-6 space-y-4">
-            {activeProjects.map((project) => (
-              <div
-                key={project.name}
-                className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200 shadow-inner shadow-sky-500/5 transition hover:border-white/20 hover:bg-white/10"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-white">{project.name}</p>
-                    <p className="text-xs text-slate-300/70">{project.category}</p>
+            {topProjects.length ? (
+              topProjects.map((membership) => (
+                <div
+                  key={membership.projectId}
+                  className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200 shadow-inner shadow-sky-500/5 transition hover:border-white/20 hover:bg-white/10"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {membership.project.name}
+                      </p>
+                      {membership.project.description ? (
+                        <p className="text-xs text-slate-300/70">
+                          {membership.project.description}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-100">
+                      <Sparkles className="h-3 w-3" />
+                      {formatStatus(membership.project.status)}
+                    </span>
                   </div>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-100">
-                    <Sparkles className="h-3 w-3" />
-                    {project.status}
-                  </span>
-                </div>
-                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="w-full rounded-full bg-white/10 sm:w-2/3">
-                    <div
-                      className="h-2 rounded-full bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500"
-                      style={{ width: `${project.progress}%` }}
-                    />
+                  <div className="mt-4 grid gap-4 text-xs text-slate-300/80 sm:grid-cols-3">
+                    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                      <span className="text-slate-100">Role</span>
+                      <p className="mt-1 text-sm text-white">
+                        {formatStatus(membership.role)}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                      <span className="text-slate-100">Tasks</span>
+                      <p className="mt-1 text-sm text-white">
+                        {membership.project._count?.tasks ?? 0}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                      <span className="text-slate-100">Joined</span>
+                      <p className="mt-1 text-sm text-white">
+                        {formatDate(membership.joinedAt)}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-300/80">
-                    {project.progress}% complete • Owned by {project.owner}
-                  </p>
                 </div>
+              ))
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center text-sm text-slate-300/80">
+                No project memberships yet. Join an initiative to see it here.
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -201,24 +292,36 @@ export default function DashboardPage() {
             </button>
           </div>
           <div className="mt-6 space-y-4">
-            {activityFeed.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.title}
-                  className="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200 shadow-inner shadow-indigo-500/10"
-                >
-                  <span className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/10 text-white/80">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <div className="space-y-1">
-                    <p className="font-semibold text-white">{item.title}</p>
-                    <p className="text-xs text-slate-300/70">{item.meta}</p>
-                    <span className="text-xs text-slate-400">{item.timestamp}</span>
+            {recentActivity.length ? (
+              recentActivity.map((task) => {
+                const Icon = deriveActivityIcon(task);
+                return (
+                  <div
+                    key={task.id}
+                    className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200"
+                  >
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="font-semibold text-white">{task.title}</p>
+                        <span className="text-xs text-slate-400">
+                          {formatDate(task.updatedAt)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-300/80">
+                        {task.project?.name ?? 'Unassigned project'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center text-sm text-slate-300/80">
+                No recent activity logged.
+              </div>
+            )}
           </div>
         </div>
       </section>

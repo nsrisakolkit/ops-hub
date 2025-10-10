@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { UserProfile } from '@/types/api';
+import type { PaginatedProjectResponse } from '@/types/api';
 import {
   backendFetchWithAuth,
   clearAuthCookies,
@@ -7,8 +7,8 @@ import {
   setAuthCookies,
 } from '@/lib/server/backend-client';
 
-type MeResponsePayload =
-  | UserProfile
+type ProjectsPayload =
+  | PaginatedProjectResponse
   | {
       statusCode?: number;
       message?: string;
@@ -16,12 +16,15 @@ type MeResponsePayload =
     };
 
 export async function GET(request: NextRequest) {
+  const query = request.nextUrl.searchParams.toString();
+  const path = query ? `/projects?${query}` : '/projects';
+
   const { response: backendResponse, tokens } = await backendFetchWithAuth(
     request,
-    '/users/me',
+    path,
   );
 
-  const payload = await parseBackendPayload<MeResponsePayload>(backendResponse);
+  const payload = await parseBackendPayload<ProjectsPayload>(backendResponse);
 
   const response = NextResponse.json(payload, {
     status: backendResponse.status,

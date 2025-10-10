@@ -7,53 +7,76 @@ import {
   Sparkles,
   Timer,
 } from 'lucide-react';
+import { fetchFromBff } from '@/lib/server/bff-fetch';
+import type { UserTask } from '@/types/api';
 
-const tasks = [
-  {
-    title: 'Refresh UI component system',
-    project: 'Cosmic Commerce',
-    priority: 'High',
-    due: 'Due today',
-    status: 'inprogress',
-    statusLabel: 'In motion',
-    accent: 'from-sky-400 via-indigo-500 to-purple-500',
-  },
-  {
-    title: 'Implement secure auth handoff',
-    project: 'Mobile Field Ops',
-    priority: 'Medium',
-    due: 'Dec 10',
-    status: 'todo',
-    statusLabel: 'Next up',
-    accent: 'from-amber-400 via-orange-500 to-rose-500',
-  },
-  {
-    title: 'Harden CI/CD pipeline',
-    project: 'Platform Engineering',
-    priority: 'Completed',
-    due: 'Dec 02',
-    status: 'done',
-    statusLabel: 'Delivered',
-    accent: 'from-emerald-400 via-teal-500 to-sky-500',
-  },
-  {
-    title: 'Author integration playbook',
-    project: 'API Federation',
-    priority: 'Medium',
-    due: 'Dec 15',
-    status: 'todo',
-    statusLabel: 'Backlog',
+const statusConfig: Record<
+  string,
+  { label: string; accent: string; icon: typeof Circle | typeof Loader2 | typeof CheckCircle2 }
+> = {
+  TODO: {
+    label: 'Backlog',
     accent: 'from-purple-400 via-indigo-500 to-slate-500',
+    icon: Circle,
   },
-];
-
-const statusIcon = {
-  todo: Circle,
-  inprogress: Loader2,
-  done: CheckCircle2,
+  IN_PROGRESS: {
+    label: 'In motion',
+    accent: 'from-sky-400 via-indigo-500 to-purple-500',
+    icon: Loader2,
+  },
+  IN_REVIEW: {
+    label: 'Review',
+    accent: 'from-amber-400 via-orange-500 to-rose-500',
+    icon: Loader2,
+  },
+  DONE: {
+    label: 'Delivered',
+    accent: 'from-emerald-400 via-teal-500 to-sky-500',
+    icon: CheckCircle2,
+  },
+  CANCELLED: {
+    label: 'Closed',
+    accent: 'from-slate-400 via-slate-500 to-slate-700',
+    icon: Circle,
+  },
 };
 
-export default function TasksPage() {
+function resolveStatus(task: UserTask) {
+  const config = statusConfig[task.status.toUpperCase()] ?? statusConfig.TODO;
+  return {
+    label: config.label,
+    accent: config.accent,
+    icon: config.icon,
+    isSpinning: config.icon === Loader2,
+  };
+}
+
+function formatDueDate(date?: string | null) {
+  if (!date) {
+    return 'No due date';
+  }
+  try {
+    return new Intl.DateTimeFormat('en', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(new Date(date));
+  } catch {
+    return date;
+  }
+}
+
+async function loadTasks(): Promise<UserTask[]> {
+  const { data, ok } = await fetchFromBff<UserTask[]>('/api/users/me/tasks');
+  if (!ok || !data) {
+    return [];
+  }
+  return data;
+}
+
+export default async function TasksPage() {
+  const tasks = await loadTasks();
+
   return (
     <div className="space-y-12">
       <header className="rounded-3xl border border-white/10 bg-slate-950/60 p-8 text-slate-200 shadow-2xl shadow-emerald-500/10 backdrop-blur">
@@ -92,46 +115,65 @@ export default function TasksPage() {
         </div>
 
         <div className="mt-6 space-y-4">
-          {tasks.map((task) => {
-            const Icon = statusIcon[task.status as keyof typeof statusIcon];
-            return (
-              <article
-                key={task.title}
-                className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-slate-200 shadow-inner shadow-sky-500/5 transition hover:border-white/25 hover:bg-white/[0.07]"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex flex-1 items-start gap-4">
-                    <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-slate-900/80">
-                      <span className={`absolute inset-0 bg-gradient-to-br ${task.accent} opacity-80`} />
-                      <Icon
-                        className={
-                          task.status === 'inprogress'
-                            ? 'relative h-5 w-5 animate-spin text-white'
-                            : 'relative h-5 w-5 text-white'
-                        }
-                      />
-                    </span>
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-white">{task.title}</span>
-                        <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">
-                          <Sparkles className="h-3 w-3" />
-                          {task.statusLabel}
-                        </span>
+          {tasks.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-slate-300/80">
+              No tasks assigned yet. Once work is scheduled it will appear here.
+            </div>
+          ) : (
+            tasks.map((task) => {
+              const status = resolveStatus(task);
+              const Icon = status.icon;
+              return (
+                <article
+                  key={task.id}
+                  className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-slate-200 shadow-inner shadow-sky-500/5 transition hover:border-white/25 hover:bg-white/[0.07]"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex flex-1 items-start gap-4">
+                      <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-slate-900/80">
+                        <span
+                          className={`absolute inset-0 bg-gradient-to-br ${status.accent} opacity-80`}
+                        />
+                        <Icon
+                          className={
+                            status.isSpinning
+                              ? 'relative h-5 w-5 animate-spin text-white'
+                              : 'relative h-5 w-5 text-white'
+                          }
+                        />
+                      </span>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold text-white">{task.title}</span>
+                          <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">
+                            <Sparkles className="h-3 w-3" />
+                            {status.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-300/70">
+                          {task.project?.name ?? 'No project'} • Priority {task.priority}
+                        </p>
+                        {task.assignee ? (
+                          <p className="text-xs text-slate-400">
+                            Assigned to{' '}
+                            <span className="text-slate-200">
+                              {task.assignee.firstName
+                                ? `${task.assignee.firstName} ${task.assignee.lastName ?? ''}`.trim()
+                                : task.assignee.username}
+                            </span>
+                          </p>
+                        ) : null}
                       </div>
-                      <p className="text-xs text-slate-300/70">
-                        {task.project} • Priority {task.priority}
-                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-300/70">
+                      <AlarmClock className="h-4 w-4 text-slate-200/70" />
+                      {formatDueDate(task.dueDate)}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-300/70">
-                    <AlarmClock className="h-4 w-4 text-slate-200/70" />
-                    {task.due}
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+                </article>
+              );
+            })
+          )}
         </div>
       </section>
     </div>

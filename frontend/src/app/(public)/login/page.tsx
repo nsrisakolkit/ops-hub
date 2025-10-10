@@ -37,10 +37,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -49,13 +51,21 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
+      const result = await response.json().catch(() => null);
+
       if (response.ok) {
-        router.push('/dashboard');
+        router.replace('/dashboard');
+        router.refresh();
       } else {
-        console.error('Login failed');
+        const message =
+          (typeof result === 'string' && result) ||
+          result?.message ||
+          result?.error ||
+          'Authentication failed';
+        setErrorMessage(message);
       }
     } catch (error) {
-      console.error('Login error:', error);
+      setErrorMessage('Unable to contact authentication service');
     } finally {
       setIsLoading(false);
     }
@@ -163,6 +173,12 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
+
+              {errorMessage ? (
+                <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-200">
+                  {errorMessage}
+                </div>
+              ) : null}
 
               <Button
                 type="submit"

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { UserProfile } from '@/types/api';
+import type { UserProjectMembership } from '@/types/api';
 import {
   backendFetchWithAuth,
   clearAuthCookies,
@@ -7,8 +7,8 @@ import {
   setAuthCookies,
 } from '@/lib/server/backend-client';
 
-type MeResponsePayload =
-  | UserProfile
+type UserProjectsPayload =
+  | UserProjectMembership[]
   | {
       statusCode?: number;
       message?: string;
@@ -18,10 +18,10 @@ type MeResponsePayload =
 export async function GET(request: NextRequest) {
   const { response: backendResponse, tokens } = await backendFetchWithAuth(
     request,
-    '/users/me',
+    '/users/me/projects',
   );
 
-  const payload = await parseBackendPayload<MeResponsePayload>(backendResponse);
+  const payload = await parseBackendPayload<UserProjectsPayload>(backendResponse);
 
   const response = NextResponse.json(payload, {
     status: backendResponse.status,
