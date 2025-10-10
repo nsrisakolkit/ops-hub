@@ -149,6 +149,22 @@ export class UsersController {
   }
 
   // Additional user management routes
+  @Get('me/projects')
+  @ApiOperation({ summary: 'List projects for the current user' })
+  @ApiOkResponse({ type: UserProjectMembershipDto, isArray: true })
+  getMyProjects(
+    @CurrentUser('sub') userId: string,
+  ): Promise<UserProjectMembershipDto[]> {
+    return this.usersService.getUserProjects(userId);
+  }
+
+  @Get('me/tasks')
+  @ApiOperation({ summary: 'List tasks for the current user' })
+  @ApiOkResponse({ type: UserTaskDto, isArray: true })
+  getMyTasks(@CurrentUser('sub') userId: string): Promise<UserTaskDto[]> {
+    return this.usersService.getUserTasks(userId);
+  }
+
   @Get(':id/projects')
   @ApiOperation({ summary: 'List projects a user belongs to' })
   @ApiParam({ name: 'id', description: 'User identifier' })
@@ -165,22 +181,6 @@ export class UsersController {
   @ApiOkResponse({ type: UserTaskDto, isArray: true })
   getUserTasks(@Param('id') id: string): Promise<UserTaskDto[]> {
     return this.usersService.getUserTasks(id);
-  }
-
-  @Get('me/projects')
-  @ApiOperation({ summary: 'List projects for the current user' })
-  @ApiOkResponse({ type: UserProjectMembershipDto, isArray: true })
-  getMyProjects(
-    @CurrentUser('sub') userId: string,
-  ): Promise<UserProjectMembershipDto[]> {
-    return this.usersService.getUserProjects(userId);
-  }
-
-  @Get('me/tasks')
-  @ApiOperation({ summary: 'List tasks for the current user' })
-  @ApiOkResponse({ type: UserTaskDto, isArray: true })
-  getMyTasks(@CurrentUser('sub') userId: string): Promise<UserTaskDto[]> {
-    return this.usersService.getUserTasks(userId);
   }
 
   @Patch(':id/status')
