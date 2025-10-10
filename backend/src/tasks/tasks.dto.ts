@@ -2,16 +2,18 @@ import {
   IsString,
   IsOptional,
   IsEnum,
-  IsUUID,
   IsDate,
   MinLength,
   MaxLength,
   IsNumber,
   Min,
   Max,
+  Matches,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { TaskStatus, Priority } from '@prisma/client';
+
+const cuidPattern = /^c[a-z0-9]{24,32}$/i;
 
 export class CreateTaskDto {
   @IsString({ message: 'Title must be a string' })
@@ -39,15 +41,25 @@ export class CreateTaskDto {
   })
   priority?: Priority;
 
-  @IsUUID(4, { message: 'Project ID must be a valid UUID' })
+  @IsString({ message: 'Project ID must be a string' })
+  @Matches(cuidPattern, { message: 'Project ID must be a valid CUID' })
+  @Transform(({ value }) => value?.trim())
   projectId: string;
 
   @IsOptional()
-  @IsUUID(4, { message: 'Assignee ID must be a valid UUID' })
+  @IsString({ message: 'Assignee ID must be a string' })
+  @Matches(cuidPattern, {
+    message: 'Assignee ID must be a valid CUID',
+  })
+  @Transform(({ value }) => value?.trim())
   assigneeId?: string;
 
   @IsOptional()
-  @IsUUID(4, { message: 'Creator ID must be a valid UUID' })
+  @IsString({ message: 'Creator ID must be a string' })
+  @Matches(cuidPattern, {
+    message: 'Creator ID must be a valid CUID',
+  })
+  @Transform(({ value }) => value?.trim())
   creatorId?: string;
 
   @IsOptional()
@@ -85,11 +97,17 @@ export class UpdateTaskDto {
   priority?: Priority;
 
   @IsOptional()
-  @IsUUID(4, { message: 'Project ID must be a valid UUID' })
+  @IsString({ message: 'Project ID must be a string' })
+  @Matches(cuidPattern, { message: 'Project ID must be a valid CUID' })
+  @Transform(({ value }) => value?.trim())
   projectId?: string;
 
   @IsOptional()
-  @IsUUID(4, { message: 'Assignee ID must be a valid UUID' })
+  @IsString({ message: 'Assignee ID must be a string' })
+  @Matches(cuidPattern, {
+    message: 'Assignee ID must be a valid CUID',
+  })
+  @Transform(({ value }) => value?.trim())
   assigneeId?: string;
 
   @IsOptional()
@@ -114,15 +132,25 @@ export class TaskQueryDto {
   priority?: Priority;
 
   @IsOptional()
-  @IsUUID(4, { message: 'Project ID must be a valid UUID' })
+  @IsString({ message: 'Project ID must be a string' })
+  @Matches(cuidPattern, { message: 'Project ID must be a valid CUID' })
+  @Transform(({ value }) => value?.trim())
   projectId?: string;
 
   @IsOptional()
-  @IsUUID(4, { message: 'Assignee ID must be a valid UUID' })
+  @IsString({ message: 'Assignee ID must be a string' })
+  @Matches(cuidPattern, {
+    message: 'Assignee ID must be a valid CUID',
+  })
+  @Transform(({ value }) => value?.trim())
   assigneeId?: string;
 
   @IsOptional()
-  @IsUUID(4, { message: 'Creator ID must be a valid UUID' })
+  @IsString({ message: 'Creator ID must be a string' })
+  @Matches(cuidPattern, {
+    message: 'Creator ID must be a valid CUID',
+  })
+  @Transform(({ value }) => value?.trim())
   creatorId?: string;
 
   @IsOptional()
