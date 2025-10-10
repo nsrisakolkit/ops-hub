@@ -430,7 +430,9 @@ describe('UsersController (e2e)', () => {
 
       expect(res.status).toBe(409);
       expect(res.body).toMatchObject({
-        message: expect.stringContaining('Email already exists'),
+        message: expect.objectContaining({
+          message: expect.stringContaining('Email already exists'),
+        }),
       });
     });
   });
@@ -483,7 +485,9 @@ describe('UsersController (e2e)', () => {
 
       expect(res.status).toBe(409);
       expect(res.body).toMatchObject({
-        message: expect.stringContaining('Current password is incorrect'),
+        message: expect.objectContaining({
+          message: expect.stringContaining('Current password is incorrect'),
+        }),
       });
     });
   });

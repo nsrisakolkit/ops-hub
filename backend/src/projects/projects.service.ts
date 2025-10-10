@@ -3,8 +3,11 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Inject,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { PrismaService } from '../database';
+import type { Cache } from 'cache-manager';
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -22,7 +25,26 @@ interface CreateProjectServiceDto extends CreateProjectDto {
 
 @Injectable()
 export class ProjectsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cache: Cache,
+  ) {}
+
+  private buildListCacheKey(query?: ProjectQueryDto): string {
+    const payload = query ? JSON.stringify(query) : '{}';
+    return `projects:list:${payload}`;
+  }
+
+  private buildDetailCacheKey(id: string): string {
+    return `projects:detail:${id}`;
+  }
+
+  private async invalidateProjectsCache(projectId?: string) {
+    if (projectId) {
+      await this.cache.del(this.buildDetailCacheKey(projectId));
+    }
+    await this.cache.reset();
+  }
 
   async create(createProjectDto: CreateProjectServiceDto) {
     const project = await this.prisma.project.create({
@@ -55,6 +77,7 @@ export class ProjectsService {
       },
     });
 
+    await this.invalidateProjectsCache(project.id);
     return project;
   }
 
@@ -67,6 +90,15 @@ export class ProjectsService {
       sortBy = 'createdAt',
       sortOrder = 'DESC',
     } = query || {};
+
+    const cacheKey = this.buildListCacheKey(query);
+    const cached = await this.cache.get<{
+      data: unknown[];
+      meta: { total: number; page: number; limit: number; totalPages: number };
+    }>(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
     const where: any = {};
 
@@ -116,7 +148,7 @@ export class ProjectsService {
       this.prisma.project.count({ where }),
     ]);
 
-    return {
+    const result = {
       data: projects,
       meta: {
         total,
@@ -125,9 +157,19 @@ export class ProjectsService {
         totalPages: Math.ceil(total / limit),
       },
     };
+    await this.cache.set(cacheKey, result);
+    return result;
   }
 
   async findOne(id: string) {
+    const cacheKey = this.buildDetailCacheKey(id);
+    const cached = await this.cache.get<Awaited<ReturnType<typeof this.prisma.project.findUnique>>>(
+      cacheKey,
+    );
+    if (cached) {
+      return cached;
+    }
+
     const project = await this.prisma.project.findUnique({
       where: { id },
       include: {
@@ -195,6 +237,7 @@ export class ProjectsService {
       throw new NotFoundException(`Project with ID ${id} not found`);
     }
 
+    await this.cache.set(cacheKey, project);
     return project;
   }
 
@@ -202,7 +245,7 @@ export class ProjectsService {
     // Check if project exists
     await this.findOne(id);
 
-    return this.prisma.project.update({
+    const updated = await this.prisma.project.update({
       where: { id },
       data: updateProjectDto,
       include: {
@@ -221,15 +264,20 @@ export class ProjectsService {
         },
       },
     });
+
+    await this.invalidateProjectsCache(id);
+    return updated;
   }
 
   async remove(id: string) {
     // Check if project exists
     await this.findOne(id);
 
-    return this.prisma.project.delete({
+    const deleted = await this.prisma.project.delete({
       where: { id },
     });
+    await this.invalidateProjectsCache(id);
+    return deleted;
   }
 
   async addMember(projectId: string, memberDto: ProjectMemberDto) {
@@ -280,6 +328,7 @@ export class ProjectsService {
       },
     });
 
+    await this.invalidateProjectsCache(projectId);
     return projectMember;
   }
 
@@ -357,6 +406,7 @@ export class ProjectsService {
       },
     });
 
+    await this.invalidateProjectsCache(projectId);
     return updatedMember;
   }
 

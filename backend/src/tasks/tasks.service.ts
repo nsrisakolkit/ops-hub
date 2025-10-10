@@ -2,9 +2,12 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  Inject,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { PrismaService } from '../database';
 import { CreateTaskDto, UpdateTaskDto, TaskQueryDto } from './tasks.dto';
+import type { Cache } from 'cache-manager';
 
 interface CreateTaskServiceDto extends CreateTaskDto {
   creatorId: string; // Make it required for service
@@ -12,7 +15,26 @@ interface CreateTaskServiceDto extends CreateTaskDto {
 
 @Injectable()
 export class TasksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cache: Cache,
+  ) {}
+
+  private buildListCacheKey(prefix: string, query?: TaskQueryDto): string {
+    const payload = query ? JSON.stringify(query) : '{}';
+    return `${prefix}:${payload}`;
+  }
+
+  private buildDetailCacheKey(id: string): string {
+    return `tasks:detail:${id}`;
+  }
+
+  private async invalidateTaskCache(taskId?: string) {
+    if (taskId) {
+      await this.cache.del(this.buildDetailCacheKey(taskId));
+    }
+    await this.cache.reset();
+  }
 
   async create(createTaskDto: CreateTaskServiceDto) {
     // Verify project exists
@@ -39,7 +61,7 @@ export class TasksService {
       }
     }
 
-    return this.prisma.task.create({
+    const task = await this.prisma.task.create({
       data: createTaskDto,
       include: {
         project: {
@@ -75,6 +97,9 @@ export class TasksService {
         },
       },
     });
+
+    await this.invalidateTaskCache(task.id);
+    return task;
   }
 
   async findAll(query?: TaskQueryDto) {
@@ -90,6 +115,15 @@ export class TasksService {
       sortBy = 'createdAt',
       sortOrder = 'DESC',
     } = query || {};
+
+    const cacheKey = this.buildListCacheKey('tasks:list', query);
+    const cached = await this.cache.get<{
+      data: unknown[];
+      meta: { total: number; page: number; limit: number; totalPages: number };
+    }>(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
     const where: any = {};
 
@@ -185,7 +219,7 @@ export class TasksService {
       this.prisma.task.count({ where }),
     ]);
 
-    return {
+    const result = {
       data: tasks,
       meta: {
         total,
@@ -194,9 +228,17 @@ export class TasksService {
         totalPages: Math.ceil(total / limit),
       },
     };
+    await this.cache.set(cacheKey, result);
+    return result;
   }
 
   async findOne(id: string) {
+    const cacheKey = this.buildDetailCacheKey(id);
+    const cached = await this.cache.get<Awaited<ReturnType<typeof this.prisma.task.findUnique>>>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const task = await this.prisma.task.findUnique({
       where: { id },
       include: {
@@ -245,6 +287,7 @@ export class TasksService {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
+    await this.cache.set(cacheKey, task);
     return task;
   }
 
@@ -286,7 +329,7 @@ export class TasksService {
       }
     }
 
-    return this.prisma.task.update({
+    const updated = await this.prisma.task.update({
       where: { id },
       data: updateTaskDto,
       include: {
@@ -323,14 +366,20 @@ export class TasksService {
         },
       },
     });
+
+    await this.invalidateTaskCache(id);
+    return updated;
   }
 
   async remove(id: string) {
-    const task = await this.findOne(id);
+    await this.findOne(id);
 
-    return this.prisma.task.delete({
+    const deleted = await this.prisma.task.delete({
       where: { id },
     });
+
+    await this.invalidateTaskCache(id);
+    return deleted;
   }
 
   // Additional helper methods
@@ -350,9 +399,9 @@ export class TasksService {
   }
 
   async updateTaskStatus(id: string, status: any) {
-    const task = await this.findOne(id);
+    await this.findOne(id);
 
-    return this.prisma.task.update({
+    const updatedStatus = await this.prisma.task.update({
       where: { id },
       data: { status },
       include: {
@@ -380,10 +429,13 @@ export class TasksService {
         },
       },
     });
+
+    await this.invalidateTaskCache(id);
+    return updatedStatus;
   }
 
   async assignTask(id: string, assigneeId: string | null) {
-    const task = await this.findOne(id);
+    await this.findOne(id);
 
     // Verify assignee exists if provided
     if (assigneeId) {
@@ -396,7 +448,7 @@ export class TasksService {
       }
     }
 
-    return this.prisma.task.update({
+    const reassigned = await this.prisma.task.update({
       where: { id },
       data: { assigneeId },
       include: {
@@ -424,5 +476,8 @@ export class TasksService {
         },
       },
     });
+
+    await this.invalidateTaskCache(id);
+    return reassigned;
   }
 }

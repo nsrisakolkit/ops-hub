@@ -2,8 +2,11 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Inject,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { PrismaService } from '../database';
+import type { Cache } from 'cache-manager';
 import {
   CreateUserDto,
   UpdateUserDto,
@@ -32,7 +35,18 @@ const userSelect = {
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cache: Cache,
+  ) {}
+
+  private buildProfileCacheKey(id: string): string {
+    return `user:profile:${id}`;
+  }
+
+  private async invalidateUserCache(id: string) {
+    await this.cache.del(this.buildProfileCacheKey(id));
+  }
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     // Check if email already exists
@@ -115,6 +129,12 @@ export class UsersService {
   }
 
   async findOne(id: string): Promise<UserResponseDto> {
+    const cacheKey = this.buildProfileCacheKey(id);
+    const cached = await this.cache.get<UserResponseDto>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: userSelect,
@@ -124,6 +144,7 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
+    await this.cache.set(cacheKey, user);
     return user;
   }
 
@@ -156,11 +177,15 @@ export class UsersService {
       }
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: updateUserDto,
       select: userSelect,
     });
+
+    await this.invalidateUserCache(id);
+    await this.cache.set(this.buildProfileCacheKey(id), updated);
+    return updated;
   }
 
   async updateOwnProfile(
@@ -180,7 +205,7 @@ export class UsersService {
       }
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: {
         email: updateOwnProfileDto.email ?? undefined,
@@ -190,14 +215,21 @@ export class UsersService {
       },
       select: userSelect,
     });
+
+    await this.invalidateUserCache(id);
+    await this.cache.set(this.buildProfileCacheKey(id), updated);
+    return updated;
   }
 
   async remove(id: string): Promise<UserResponseDto> {
     await this.findOne(id);
-    return this.prisma.user.delete({
+    const deleted = await this.prisma.user.delete({
       where: { id },
       select: userSelect,
     });
+
+    await this.invalidateUserCache(id);
+    return deleted;
   }
 
   // Additional helper methods
@@ -271,11 +303,15 @@ export class UsersService {
   ): Promise<UserResponseDto> {
     await this.findOne(id);
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: { isActive },
       select: userSelect,
     });
+
+    await this.invalidateUserCache(id);
+    await this.cache.set(this.buildProfileCacheKey(id), updated);
+    return updated;
   }
 
   async updatePassword(
@@ -303,10 +339,14 @@ export class UsersService {
     // Hash new password
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: { password: hashedNewPassword },
       select: userSelect,
     });
+
+    await this.invalidateUserCache(id);
+    await this.cache.set(this.buildProfileCacheKey(id), updated);
+    return updated;
   }
 }
