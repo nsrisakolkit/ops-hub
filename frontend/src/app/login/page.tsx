@@ -24,24 +24,24 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const payload = await response.json().catch(() => null);
+      const result = await response.json().catch(() => null);
 
-      if (response.ok && payload?.success) {
+      if (response.ok && result?.success) {
         router.replace('/projects');
         router.refresh();
         return;
       }
 
       const message =
-        (typeof payload === 'string' && payload) ||
-        (Array.isArray(payload?.message)
-          ? payload.message.join(', ')
-          : typeof payload?.message === 'string'
-          ? payload.message
-          : typeof payload?.error === 'string'
-          ? payload.error
-          : typeof payload?.message === 'object' && payload?.message !== null
-          ? JSON.stringify(payload.message)
+        (typeof result === 'string' && result) ||
+        (Array.isArray(result?.message)
+          ? result.message.join(', ')
+          : typeof result?.message === 'string'
+          ? result.message
+          : typeof result?.error === 'string'
+          ? result.error
+          : typeof result?.message === 'object' && result?.message !== null
+          ? JSON.stringify(result.message)
           : 'Unable to authenticate.');
 
       setErrorMessage(message);
@@ -91,13 +91,22 @@ export default function LoginPage() {
             </p>
           ) : null}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-lg bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-sky-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
-          </button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 rounded-lg bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-sky-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/register')}
+              className="flex-1 rounded-lg border border-sky-400/40 bg-white/5 px-4 py-2 text-sm font-semibold text-sky-200 shadow shadow-sky-500/10 transition hover:bg-sky-500/10 hover:text-white"
+            >
+              Register
+            </button>
+          </div>
         </form>
       </div>
     </main>
