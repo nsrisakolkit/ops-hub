@@ -51,21 +51,27 @@ export async function ensureTestUsers(app: INestApplication): Promise<void> {
   for (const { email, password, role, username } of Object.values(
     ROLE_CREDENTIALS,
   )) {
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (!existing) {
-      const hashed = await bcrypt.hash(password, 10);
-      await prisma.user.create({
-        data: {
-          email,
-          username,
-          password: hashed,
-          role,
-          isActive: true,
-          firstName: username,
-          lastName: 'E2E',
-        },
-      });
-    }
+    const hashed = await bcrypt.hash(password, 10);
+    await prisma.user.upsert({
+      where: { username },
+      update: {
+        email,
+        password: hashed,
+        role,
+        isActive: true,
+        firstName: username,
+        lastName: 'E2E',
+      },
+      create: {
+        email,
+        username,
+        password: hashed,
+        role,
+        isActive: true,
+        firstName: username,
+        lastName: 'E2E',
+      },
+    });
   }
 }
 

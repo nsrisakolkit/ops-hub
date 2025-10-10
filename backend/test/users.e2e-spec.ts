@@ -113,6 +113,10 @@ describe('UsersController (e2e)', () => {
   let managedTaskTitle: string;
   let userTaskId: string;
   let userTaskTitle: string;
+  let originalUserEmail: string | null = null;
+  let originalUserFirstName: string | null = null;
+  let originalUserLastName: string | null = null;
+  let originalUserAvatar: string | null = null;
 
   beforeAll(async () => {
     process.env.REDIS_URL = '';
@@ -154,6 +158,20 @@ describe('UsersController (e2e)', () => {
     if (!regularUserId) {
       throw new Error('Regular test user ID not initialized');
     }
+
+    const baselineUser = await prisma.user.findUnique({
+      where: { id: regularUserId },
+      select: { email: true, firstName: true, lastName: true, avatar: true },
+    });
+
+    if (!baselineUser) {
+      throw new Error('Baseline test user not found in database');
+    }
+
+    originalUserEmail = baselineUser.email;
+    originalUserFirstName = baselineUser.firstName ?? null;
+    originalUserLastName = baselineUser.lastName ?? null;
+    originalUserAvatar = baselineUser.avatar ?? null;
 
     managedProjectName = `Managed Project ${Date.now()}`;
     const managedProject = await prisma.project.create({
@@ -366,6 +384,57 @@ describe('UsersController (e2e)', () => {
     );
   });
 
+  describe('PATCH /api/users/me', () => {
+    it('allows user to update own profile fields while ignoring restricted fields', async () => {
+      const userId = userIds.USER!;
+      const newEmail = `self.update.${Date.now()}@opshub.com`;
+      const res = await request(httpServer)
+        .patch('/api/users/me')
+        .set('Authorization', `Bearer ${tokens.USER}`)
+        .send({
+          email: newEmail,
+          firstName: 'Self',
+          lastName: 'Updater',
+          role: 'ADMIN',
+          username: 'attempt_change_username',
+        });
+
+      expect(res.status).toBe(200);
+      const body = parseResponse<UserPayload>(res);
+      expect(body.data.email).toBe(newEmail);
+      expect(body.data.firstName).toBe('Self');
+      expect(body.data.lastName).toBe('Updater');
+      // Ensure restricted fields remain unchanged
+      expect(body.data.role).toBe(Role.USER);
+      expect(body.data.username).toBeDefined();
+
+      // revert changes to avoid side effects
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          email: originalUserEmail ?? undefined,
+          firstName: originalUserFirstName ?? undefined,
+          lastName: originalUserLastName ?? undefined,
+          avatar: originalUserAvatar ?? undefined,
+        },
+      });
+    });
+
+    it('rejects updates that would violate email uniqueness', async () => {
+      const res = await request(httpServer)
+        .patch('/api/users/me')
+        .set('Authorization', `Bearer ${tokens.USER}`)
+        .send({
+          email: managedUserEmail,
+        });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({
+        message: expect.stringContaining('Email already exists'),
+      });
+    });
+  });
+
   describe('PATCH /api/users/:id', () => {
     test.each<TestRole>(['ADMIN', 'SUPER_ADMIN', 'USER'])(
       '%s can update user profile fields',
@@ -381,6 +450,42 @@ describe('UsersController (e2e)', () => {
         expect(body.data.firstName).toBe(updatedName);
       },
     );
+  });
+
+  describe('PATCH /api/users/me/password', () => {
+    const newPassword = 'SelfNewPassword123!';
+
+    it('allows user to change own password', async () => {
+      const res = await request(httpServer)
+        .patch('/api/users/me/password')
+        .set('Authorization', `Bearer ${tokens.USER}`)
+        .send({
+          currentPassword: TEST_USER_PASSWORD,
+          newPassword,
+        });
+
+      expect(res.status).toBe(200);
+
+      await prisma.user.update({
+        where: { id: userIds.USER! },
+        data: { password: await bcrypt.hash(TEST_USER_PASSWORD, 10) },
+      });
+    });
+
+    it('rejects password update when current password is incorrect', async () => {
+      const res = await request(httpServer)
+        .patch('/api/users/me/password')
+        .set('Authorization', `Bearer ${tokens.USER}`)
+        .send({
+          currentPassword: 'WrongPassword!',
+          newPassword: 'AnotherPass123!',
+        });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({
+        message: expect.stringContaining('Current password is incorrect'),
+      });
+    });
   });
 
   describe('GET /api/users/:id/projects', () => {
