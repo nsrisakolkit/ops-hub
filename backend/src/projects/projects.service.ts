@@ -452,6 +452,8 @@ export class ProjectsService {
       },
     });
 
+    await this.invalidateProjectsCache(projectId);
+
     return { message: 'Member removed successfully' };
   }
 

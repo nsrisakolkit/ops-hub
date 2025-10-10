@@ -15,37 +15,30 @@ ops-hub/
 ## Quick Start
 
 ### Prerequisites
-- Node.js 18+
-- Docker & Docker Compose
-- PostgreSQL (via Docker)
-- Redis (via Docker)
+- Docker & Docker Compose v2+
+- (Optional) Node.js 18+ if you want to run the apps outside Docker
 
-### Installation
+### One-Click Development Environment
 
-1. **Clone and install dependencies:**
-   ```bash
-   git clone <repository-url>
-   cd ops-hub
-   npm install
-   ```
+Everything (Postgres, Redis, NestJS API, Next.js frontend) is orchestrated via Docker Compose:
 
-2. **Start development services:**
-   ```bash
-   # Start databases
-   npm run docker:up
-   
-   # Run backend development server
-   npm run dev:backend
-   ```
+```bash
+git clone <repository-url>
+cd ops-hub
+docker compose up --build
+```
 
-3. **Setup database:**
-   ```bash
-   # Generate Prisma client
-   npm run prisma:generate
-   
-   # Run database migrations
-   npm run prisma:migrate
-   ```
+On the first run the containers will install dependencies, run migrations, seed sample data, and start both servers in watch mode. Named volumes keep `node_modules` cached, so subsequent restarts are fast.
+
+Services will be available at:
+
+- Frontend (Next.js): http://localhost:3001
+- Backend (NestJS): http://localhost:3000
+- API docs (Swagger): http://localhost:3000/api
+- PostgreSQL: `localhost:5433`
+- Redis: `localhost:6379`
+
+Press `Ctrl+C` to stop the stack, or `docker compose down` to stop and remove the containers.
 
 ### Available Scripts
 

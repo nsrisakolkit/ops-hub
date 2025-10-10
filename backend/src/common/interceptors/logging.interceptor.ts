@@ -5,6 +5,7 @@ import {
   CallHandler,
 } from '@nestjs/common';
 import { Logger } from 'nestjs-pino'; // ← Pino Logger
+import { randomUUID } from 'crypto';
 import { Observable } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
@@ -32,7 +33,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const { method, url, headers, user } = request;
     const now = Date.now();
-    const correlationId = headers['x-correlation-id'] || crypto.randomUUID();
+    const correlationId = headers['x-correlation-id'] || randomUUID();
 
     this.logger.log(
       {
