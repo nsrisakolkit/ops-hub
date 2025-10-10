@@ -9,6 +9,26 @@ import type {
   TaskDetail,
 } from './types';
 
+function sanitiseLoopbackHost(host: string): string {
+  if (host === 'localhost' || host === '::1') {
+    return '127.0.0.1';
+  }
+
+  if (host.startsWith('localhost:')) {
+    return `127.0.0.1:${host.slice('localhost:'.length)}`;
+  }
+
+  if (host.startsWith('[::1]')) {
+    return `127.0.0.1${host.slice('[::1]'.length)}`;
+  }
+
+  if (host.startsWith('::1:')) {
+    return `127.0.0.1:${host.slice('::1:'.length)}`;
+  }
+
+  return host;
+}
+
 export async function fetchWithCookies(path: string): Promise<Response> {
   const [cookieStore, headersList] = await Promise.all([cookies(), headers()]);
 
@@ -17,11 +37,12 @@ export async function fetchWithCookies(path: string): Promise<Response> {
     .map((cookie) => `${cookie.name}=${cookie.value}`)
     .join('; ');
 
-  const host =
+  const headerHost =
     headersList.get('x-forwarded-host') ?? headersList.get('host') ?? '127.0.0.1:3000';
+  const host = sanitiseLoopbackHost(headerHost);
   const protocol =
     headersList.get('x-forwarded-proto') ??
-    (host.includes('localhost') || host.startsWith('127.') ? 'http' : 'https');
+    (headerHost.includes('localhost') || host.startsWith('127.') ? 'http' : 'https');
   const baseUrl = `${protocol}://${host}`;
 
   return fetch(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`, {
