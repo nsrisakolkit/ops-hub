@@ -1,26 +1,16 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { fetchCurrentUser, fetchProjectDetail } from '../project-fetchers';
 import { DeleteProjectButton } from '../delete-project-button';
-import { DeleteTaskButton } from '../delete-task-button';
-import { NewTaskButton } from '../new-task-button';
 import { ProjectMembersSection } from '../members-section';
-import { formatDate, formatDateTime } from '../project-utils';
-import type { ProjectDetail } from '../types';
+import { ProjectTasksSection } from '../project-tasks-section';
+import { fetchCurrentUser, fetchProjectDetail } from '../project-fetchers';
+import { formatDateTime } from '../project-utils';
+import { UpdateProjectButton } from '../update-project-button';
 
 interface PageProps {
   params: Promise<{
     id: string;
   }>;
-}
-
-function taskAssigneeName(task: ProjectDetail['tasks'][number]): string {
-  const { assignee } = task;
-  if (!assignee) return 'Unassigned';
-  const name = [assignee.firstName, assignee.lastName].filter(Boolean).join(' ').trim();
-  if (name) return name;
-  if (assignee.username) return assignee.username;
-  return 'Unassigned';
 }
 
 export default async function ProjectDetailPage({ params }: PageProps) {
@@ -69,6 +59,14 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           >
             ← Back to Projects
           </Link>
+          {canManageProject ? (
+            <UpdateProjectButton
+              projectId={project.id}
+              name={project.name}
+              description={project.description ?? null}
+              status={project.status}
+            />
+          ) : null}
           {canManageProject ? <DeleteProjectButton projectId={project.id} /> : null}
         </div>
       </div>
@@ -88,80 +86,19 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         </dl>
       </section>
 
+      <ProjectTasksSection
+        projectId={project.id}
+        tasks={project.tasks}
+        members={project.members}
+        canManageTasks={canManageTasks}
+      />
+
       <ProjectMembersSection
         projectId={project.id}
         members={project.members}
         canManage={canManageMembers}
         viewerUserId={currentUser?.id}
       />
-
-      <section className="space-y-4 rounded-xl border border-white/10 bg-slate-950/60 p-6">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">Tasks</h2>
-          <div className="flex items-center gap-3">
-            <span className="text-xs uppercase tracking-[0.2em] text-slate-400">
-              {project.tasks.length} task{project.tasks.length === 1 ? '' : 's'}
-            </span>
-            {canManageTasks ? <NewTaskButton projectId={project.id} members={project.members} /> : null}
-          </div>
-        </header>
-
-        {project.tasks.length === 0 ? (
-          <p className="text-sm text-slate-300/70">No tasks are currently associated with this project.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/10 text-sm">
-              <thead className="bg-white/5 text-xs uppercase tracking-[0.2em] text-slate-300/80">
-                <tr>
-                  <th scope="col" className="px-4 py-3 text-left">
-                    Title
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left">
-                    Status
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left">
-                    Priority
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left">
-                    Due
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left">
-                    Assignee
-                  </th>
-                  {canManageTasks ? (
-                    <th scope="col" className="px-4 py-3 text-right">
-                      Actions
-                    </th>
-                  ) : null}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/10">
-                {project.tasks.map((task) => (
-                  <tr key={task.id} className="hover:bg-white/5">
-                  <td className="px-4 py-3 text-white">
-                    <Link
-                        href={`/tasks/${task.id}`}
-                        className="text-sky-300 underline-offset-4 transition hover:text-white hover:underline"
-                      >
-                        {task.title}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-slate-200">{task.status}</td>
-                    <td className="px-4 py-3 text-slate-200">{task.priority ?? '—'}</td>
-                    <td className="px-4 py-3 text-slate-200">{formatDate(task.dueDate ?? null)}</td>
-                    <td className="px-4 py-3 text-slate-200">{taskAssigneeName(task)}</td>
-                    {canManageTasks ? (
-                      <td className="px-4 py-3 text-right">
-                        <DeleteTaskButton taskId={task.id} />
-                      </td>
-                    ) : null}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
 
       {project.files && project.files.length > 0 ? (
         <section className="space-y-3 rounded-xl border border-white/10 bg-slate-950/60 p-6">

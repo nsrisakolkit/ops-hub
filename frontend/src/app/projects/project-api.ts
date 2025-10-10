@@ -6,11 +6,17 @@ import type {
   ProjectRole,
   ProjectTask,
   ResponseEnvelope,
+  UpdateProjectInput,
   UpdateTaskInput,
   UserSummary,
 } from './types';
 
 type CreateProjectSuccess = {
+  success: true;
+  project: Project;
+};
+
+type UpdateProjectSuccess = {
   success: true;
   project: Project;
 };
@@ -48,6 +54,7 @@ function normaliseException(error: unknown, fallback: string): ApiErrorResult {
 }
 
 export type CreateProjectResult = CreateProjectSuccess | ApiErrorResult;
+export type UpdateProjectResult = UpdateProjectSuccess | ApiErrorResult;
 
 export async function createProject(input: CreateProjectInput): Promise<CreateProjectResult> {
   try {
@@ -81,6 +88,36 @@ export async function createProject(input: CreateProjectInput): Promise<CreatePr
 }
 
 export type DeleteProjectResult = { success: true } | ApiErrorResult;
+
+export async function updateProject(
+  projectId: string,
+  input: UpdateProjectInput,
+): Promise<UpdateProjectResult> {
+  try {
+    const response = await fetch(`/api/projects/${projectId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+      cache: 'no-store',
+    });
+
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      return normaliseError(response.status, payload, 'Unable to update project.');
+    }
+
+    const project = extractProject(payload);
+
+    if (!project) {
+      return normaliseError(502, payload, 'Backend returned an unexpected project response.');
+    }
+
+    return { success: true, project };
+  } catch (error) {
+    return normaliseException(error, 'Something went wrong while updating the project.');
+  }
+}
 
 export async function deleteProject(projectId: string): Promise<DeleteProjectResult> {
   try {

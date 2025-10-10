@@ -1,6 +1,22 @@
 export type ProjectRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
-
 export const PROJECT_ROLES: readonly ProjectRole[] = ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'];
+
+export type ProjectStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED' | 'COMPLETED';
+export const PROJECT_STATUSES: readonly ProjectStatus[] = [
+  'ACTIVE',
+  'INACTIVE',
+  'ARCHIVED',
+  'COMPLETED',
+];
+
+export const PROJECT_TASK_SORT_FIELDS = [
+  'createdAt',
+  'updatedAt',
+  'dueDate',
+  'priority',
+  'status',
+  'title',
+] as const;
 
 export interface Project {
   id: string;
@@ -31,6 +47,12 @@ export interface MeResponse {
 export interface CreateProjectInput {
   name: string;
   description?: string;
+  status?: string;
+}
+
+export interface UpdateProjectInput {
+  name?: string;
+  description?: string | null;
   status?: string;
 }
 
