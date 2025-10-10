@@ -2,7 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { PrismaService } from '../database';
-import { CreateUserDto, UpdateUserDto, UserQueryDto, Role } from './users.dto';
+import { CreateUserDto, UpdateUserDto, UserQueryDto } from './users.dto';
+import { Role } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+
+// Mock bcrypt
+jest.mock('bcrypt');
+const mockedBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
 
 // Mock data
 const mockUser = {
@@ -53,9 +59,7 @@ const mockTask = {
   description: 'Test task description',
   status: 'TODO',
   priority: 'MEDIUM',
-  creatorId: '1',
-  assigneeId: '1',
-  projectId: '1',
+  dueDate: null,
   createdAt: new Date('2023-01-01'),
   updatedAt: new Date('2023-01-01'),
   project: {
@@ -68,6 +72,15 @@ const mockTask = {
     firstName: 'Test',
     lastName: 'User',
   },
+};
+
+const mockProjectMembership = {
+  id: '1',
+  role: 'MEMBER',
+  joinedAt: new Date('2023-01-01'),
+  projectId: '1',
+  userId: '1',
+  project: mockProject,
 };
 
 // Mock PrismaService
@@ -108,6 +121,10 @@ describe('UsersService', () => {
 
     // Reset all mocks before each test
     jest.clearAllMocks();
+    
+    // Setup bcrypt mocks
+    mockedBcrypt.hash.mockResolvedValue('hashedPassword' as never);
+    mockedBcrypt.compare.mockResolvedValue(true as never);
   });
 
   it('should be defined', () => {
@@ -118,6 +135,7 @@ describe('UsersService', () => {
     const createUserDto: CreateUserDto = {
       email: 'test@example.com',
       username: 'testuser',
+      password: 'password123',
       firstName: 'Test',
       lastName: 'User',
     };
@@ -135,8 +153,12 @@ describe('UsersService', () => {
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
         where: { username: createUserDto.username },
       });
+      expect(mockedBcrypt.hash).toHaveBeenCalledWith(createUserDto.password, 10);
       expect(mockPrismaService.user.create).toHaveBeenCalledWith({
-        data: createUserDto,
+        data: {
+          ...createUserDto,
+          password: 'hashedPassword',
+        },
         select: expect.any(Object),
       });
       expect(result).toEqual(mockUser);
@@ -152,6 +174,8 @@ describe('UsersService', () => {
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
         where: { email: createUserDto.email },
       });
+      expect(mockedBcrypt.hash).not.toHaveBeenCalled();
+      expect(mockPrismaService.user.create).not.toHaveBeenCalled();
     });
 
     it('should throw ConflictException if username already exists', async () => {
@@ -164,6 +188,8 @@ describe('UsersService', () => {
       );
 
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledTimes(2);
+      expect(mockedBcrypt.hash).not.toHaveBeenCalled();
+      expect(mockPrismaService.user.create).not.toHaveBeenCalled();
     });
   });
 
@@ -293,6 +319,56 @@ describe('UsersService', () => {
         totalPages: 2,
       });
     });
+
+    it('should handle empty search query gracefully', async () => {
+      const query: UserQueryDto = { search: '', page: 1, limit: 10 };
+
+      mockPrismaService.user.findMany.mockResolvedValue(mockUsers);
+      mockPrismaService.user.count.mockResolvedValue(2);
+
+      await service.findAll(query);
+
+      // Empty search should not add OR condition
+      expect(mockPrismaService.user.findMany).toHaveBeenCalledWith({
+        where: {},
+        skip: 0,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        select: expect.any(Object),
+      });
+    });
+
+    it('should handle multiple filters simultaneously', async () => {
+      const query: UserQueryDto = {
+        search: 'admin',
+        role: Role.ADMIN,
+        isActive: true,
+        page: 1,
+        limit: 5,
+      };
+
+      mockPrismaService.user.findMany.mockResolvedValue([mockUsers[1]]);
+      mockPrismaService.user.count.mockResolvedValue(1);
+
+      await service.findAll(query);
+
+      expect(mockPrismaService.user.findMany).toHaveBeenCalledWith({
+        where: {
+          isActive: true,
+          role: Role.ADMIN,
+          OR: [
+            { email: { contains: 'admin', mode: 'insensitive' } },
+            { username: { contains: 'admin', mode: 'insensitive' } },
+            { firstName: { contains: 'admin', mode: 'insensitive' } },
+            { lastName: { contains: 'admin', mode: 'insensitive' } },
+          ],
+        },
+        skip: 0,
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: expect.any(Object),
+      });
+    });
   });
 
   describe('findOne', () => {
@@ -390,6 +466,20 @@ describe('UsersService', () => {
       // Should not check for email conflict since it's the same
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledTimes(1);
     });
+
+    it('should allow updating username to the same value', async () => {
+      const updateDto = { username: mockUser.username };
+      const updatedUser = { ...mockUser, ...updateDto };
+
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      mockPrismaService.user.update.mockResolvedValue(updatedUser);
+
+      const result = await service.update('1', updateDto);
+
+      expect(result).toEqual(updatedUser);
+      // Should not check for username conflict since it's the same
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('remove', () => {
@@ -401,6 +491,7 @@ describe('UsersService', () => {
 
       expect(mockPrismaService.user.delete).toHaveBeenCalledWith({
         where: { id: '1' },
+        select: expect.any(Object),
       });
       expect(result).toEqual(mockUser);
     });
@@ -458,13 +549,7 @@ describe('UsersService', () => {
 
   describe('getUserProjects', () => {
     it('should return user projects with member details', async () => {
-      const mockProjectMembers = [
-        {
-          userId: '1',
-          project: mockProject,
-          joinedAt: new Date('2023-01-01'),
-        },
-      ];
+      const mockProjectMembers = [mockProjectMembership];
 
       mockPrismaService.projectMember.findMany.mockResolvedValue(
         mockProjectMembers,
@@ -558,56 +643,54 @@ describe('UsersService', () => {
     });
   });
 
-  // Test edge cases and error scenarios
-  describe('Edge Cases', () => {
-    it('should handle empty search query gracefully', async () => {
-      const query: UserQueryDto = { search: '' };
+  describe('updatePassword', () => {
+    const mockUserWithPassword = {
+      ...mockUser,
+      password: 'hashedCurrentPassword',
+    };
 
-      mockPrismaService.user.findMany.mockResolvedValue(mockUsers);
-      mockPrismaService.user.count.mockResolvedValue(2);
+    it('should update password successfully', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUserWithPassword);
+      mockedBcrypt.compare.mockResolvedValue(true as never);
+      mockedBcrypt.hash.mockResolvedValue('hashedNewPassword' as never);
+      mockPrismaService.user.update.mockResolvedValue(mockUser);
 
-      await service.findAll(query);
+      const result = await service.updatePassword('1', 'currentPassword', 'newPassword');
 
-      // Empty search should not add OR condition
-      expect(mockPrismaService.user.findMany).toHaveBeenCalledWith({
-        where: {},
-        skip: 0,
-        take: 10,
-        orderBy: { createdAt: 'desc' },
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
+      expect(mockedBcrypt.compare).toHaveBeenCalledWith(
+        'currentPassword',
+        'hashedCurrentPassword',
+      );
+      expect(mockedBcrypt.hash).toHaveBeenCalledWith('newPassword', 10);
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: '1' },
+        data: { password: 'hashedNewPassword' },
         select: expect.any(Object),
       });
+      expect(result).toEqual(mockUser);
     });
 
-    it('should handle multiple filters simultaneously', async () => {
-      const query: UserQueryDto = {
-        search: 'admin',
-        role: Role.ADMIN,
-        isActive: true,
-        page: 1,
-        limit: 5,
-      };
+    it('should throw NotFoundException if user not found', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      mockPrismaService.user.findMany.mockResolvedValue([mockUsers[1]]);
-      mockPrismaService.user.count.mockResolvedValue(1);
+      await expect(
+        service.updatePassword('999', 'currentPassword', 'newPassword'),
+      ).rejects.toThrow(new NotFoundException('User with ID 999 not found'));
+    });
 
-      await service.findAll(query);
+    it('should throw ConflictException if current password is incorrect', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUserWithPassword);
+      mockedBcrypt.compare.mockResolvedValue(false as never);
 
-      expect(mockPrismaService.user.findMany).toHaveBeenCalledWith({
-        where: {
-          isActive: true,
-          role: Role.ADMIN,
-          OR: [
-            { email: { contains: 'admin', mode: 'insensitive' } },
-            { username: { contains: 'admin', mode: 'insensitive' } },
-            { firstName: { contains: 'admin', mode: 'insensitive' } },
-            { lastName: { contains: 'admin', mode: 'insensitive' } },
-          ],
-        },
-        skip: 0,
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        select: expect.any(Object),
-      });
+      await expect(
+        service.updatePassword('1', 'wrongPassword', 'newPassword'),
+      ).rejects.toThrow(new ConflictException('Current password is incorrect'));
+
+      expect(mockedBcrypt.hash).not.toHaveBeenCalled();
+      expect(mockPrismaService.user.update).not.toHaveBeenCalled();
     });
   });
 });
