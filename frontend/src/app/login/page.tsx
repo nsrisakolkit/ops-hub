@@ -53,12 +53,20 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-slate-100">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-slate-900/70 p-8 shadow-xl shadow-sky-500/10 backdrop-blur">
-        <h1 className="mb-6 text-center text-2xl font-semibold text-white">Sign in</h1>
-        <form className="space-y-4" onSubmit={handleSubmit}>
+    <main className="flex min-h-screen items-center justify-center px-4 text-slate-100">
+      <div className="glass-panel w-full max-w-md p-10">
+        <div className="mb-8 space-y-2 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-sky-300/90">
+            Welcome Back
+          </p>
+          <h1 className="text-3xl font-semibold text-white">Sign in to OpsHub</h1>
+          <p className="text-sm text-slate-300/80">
+            Rejoin your teams, monitor progress, and keep initiatives moving.
+          </p>
+        </div>
+        <form className="space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-slate-200">
+            <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
               Email
             </label>
             <input
@@ -67,12 +75,12 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-3 text-sm text-white shadow-inner shadow-white/5 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium text-slate-200">
+            <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
               Password
             </label>
             <input
@@ -81,7 +89,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-3 text-sm text-white shadow-inner shadow-white/5 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
             />
           </div>
 
@@ -95,14 +103,14 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-lg bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-sky-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex-1 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/30 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? 'Signing in…' : 'Sign in'}
             </button>
             <button
               type="button"
               onClick={() => router.push('/register')}
-              className="flex-1 rounded-lg border border-sky-400/40 bg-white/5 px-4 py-2 text-sm font-semibold text-sky-200 shadow shadow-sky-500/10 transition hover:bg-sky-500/10 hover:text-white"
+              className="flex-1 rounded-xl border border-sky-400/40 bg-white/5 px-4 py-3 text-sm font-semibold text-sky-200 shadow shadow-sky-500/10 transition hover:bg-sky-500/15 hover:text-white"
             >
               Register
             </button>

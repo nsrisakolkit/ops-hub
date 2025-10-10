@@ -27,9 +27,7 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleChange = (key: keyof FormState) => (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleChange = (key: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [key]: event.target.value }));
   };
 
@@ -73,12 +71,12 @@ export default function RegisterPage() {
         (Array.isArray(payload?.message)
           ? payload.message.join(', ')
           : typeof payload?.message === 'string'
-          ? payload.message
-          : typeof payload?.error === 'string'
-          ? payload.error
-          : typeof payload?.details === 'string'
-          ? payload.details
-          : 'Unable to register user.');
+            ? payload.message
+            : typeof payload?.error === 'string'
+              ? payload.error
+              : typeof payload?.details === 'string'
+                ? payload.details
+                : 'Unable to register user.');
 
       setErrorMessage(message);
     } catch {
@@ -89,19 +87,22 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-slate-100">
-      <div className="w-full max-w-lg space-y-6 rounded-2xl border border-white/10 bg-slate-900/70 p-8 shadow-xl shadow-sky-500/10 backdrop-blur">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Create your OpsHub account</h1>
+    <main className="flex min-h-screen items-center justify-center px-4 text-slate-100">
+      <div className="glass-panel w-full max-w-3xl space-y-8 p-10">
+        <div className="space-y-3 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-sky-300/90">
+            Create Account
+          </p>
+          <h1 className="text-3xl font-semibold text-white">Welcome to OpsHub</h1>
           <p className="text-sm text-slate-300/80">
-            Enter your details to receive immediate access to the workspace.
+            Set up your workspace profile to start collaborating with your teams.
           </p>
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-5" onSubmit={handleSubmit}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label htmlFor="firstName" className="block text-sm font-medium text-slate-200">
+              <label htmlFor="firstName" className="block text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
                 First name
               </label>
               <input
@@ -110,11 +111,11 @@ export default function RegisterPage() {
                 required
                 value={form.firstName}
                 onChange={handleChange('firstName')}
-                className="w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+                className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-3 text-sm text-white shadow-inner shadow-white/5 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="lastName" className="block text-sm font-medium text-slate-200">
+              <label htmlFor="lastName" className="block text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
                 Last name
               </label>
               <input
@@ -123,13 +124,13 @@ export default function RegisterPage() {
                 required
                 value={form.lastName}
                 onChange={handleChange('lastName')}
-                className="w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+                className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-3 text-sm text-white shadow-inner shadow-white/5 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-slate-200">
+            <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
               Email
             </label>
             <input
@@ -138,12 +139,12 @@ export default function RegisterPage() {
               required
               value={form.email}
               onChange={handleChange('email')}
-              className="w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-3 text-sm text-white shadow-inner shadow-white/5 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="username" className="block text-sm font-medium text-slate-200">
+            <label htmlFor="username" className="block text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
               Username
             </label>
             <input
@@ -152,13 +153,13 @@ export default function RegisterPage() {
               required
               value={form.username}
               onChange={handleChange('username')}
-              className="w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-3 text-sm text-white shadow-inner shadow-white/5 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-slate-200">
+              <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
                 Password
               </label>
               <input
@@ -167,11 +168,11 @@ export default function RegisterPage() {
                 required
                 value={form.password}
                 onChange={handleChange('password')}
-                className="w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+                className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-3 text-sm text-white shadow-inner shadow-white/5 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-200">
+              <label htmlFor="confirmPassword" className="block text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
                 Confirm password
               </label>
               <input
@@ -180,7 +181,7 @@ export default function RegisterPage() {
                 required
                 value={form.confirmPassword}
                 onChange={handleChange('confirmPassword')}
-                className="w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+                className="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-3 text-sm text-white shadow-inner shadow-white/5 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
               />
             </div>
           </div>
@@ -195,16 +196,16 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-lg bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 px-4 py-2 text-sm font-semibold text-white shadow shadow-sky-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex-1 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/30 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? 'Creating account…' : 'Create account'}
             </button>
             <button
               type="button"
               onClick={() => router.push('/login')}
-              className="flex-1 rounded-lg border border-sky-400/40 bg-white/5 px-4 py-2 text-sm font-semibold text-sky-200 shadow shadow-sky-500/10 transition hover:bg-sky-500/10 hover:text-white"
+              className="flex-1 rounded-xl border border-sky-400/40 bg-white/5 px-4 py-3 text-sm font-semibold text-sky-200 shadow shadow-sky-500/10 transition hover:bg-sky-500/15 hover:text-white"
             >
-              Back to login
+              Back to sign in
             </button>
           </div>
         </form>

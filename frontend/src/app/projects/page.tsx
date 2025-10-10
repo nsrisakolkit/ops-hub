@@ -30,10 +30,10 @@ export default async function ProjectsPage() {
           <thead className="bg-white/5 text-xs uppercase tracking-[0.2em] text-slate-300/80">
             <tr>
               <th scope="col" className="px-4 py-3 text-left">
-                ID
+                Name
               </th>
               <th scope="col" className="px-4 py-3 text-left">
-                Name
+                Description
               </th>
               <th scope="col" className="px-4 py-3 text-left">
                 Status
@@ -53,7 +53,6 @@ export default async function ProjectsPage() {
             ) : (
               projects.map((project) => (
                 <tr key={project.id} className="hover:bg-white/5">
-                  <td className="px-4 py-3 font-mono text-xs text-slate-300/70">{project.id}</td>
                   <td className="px-4 py-3 text-white">
                     <Link
                       href={`/projects/${project.id}`}
@@ -61,6 +60,15 @@ export default async function ProjectsPage() {
                     >
                       {project.name}
                     </Link>
+                  </td>
+                  <td className="max-w-[28ch] px-4 py-3 text-slate-300/80">
+                    {project.description ? (
+                      <span className="block truncate" title={project.description}>
+                        {project.description}
+                      </span>
+                    ) : (
+                      <span className="text-slate-500/70">No description</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-slate-200">{project.status}</td>
                   <td className="px-4 py-3 text-slate-300/70">{formatDate(project.createdAt)}</td>

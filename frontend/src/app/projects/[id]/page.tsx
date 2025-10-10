@@ -138,8 +138,8 @@ export default async function ProjectDetailPage({ params }: PageProps) {
               <tbody className="divide-y divide-white/10">
                 {project.tasks.map((task) => (
                   <tr key={task.id} className="hover:bg-white/5">
-                    <td className="px-4 py-3 text-white">
-                      <Link
+                  <td className="px-4 py-3 text-white">
+                    <Link
                         href={`/tasks/${task.id}`}
                         className="text-sky-300 underline-offset-4 transition hover:text-white hover:underline"
                       >

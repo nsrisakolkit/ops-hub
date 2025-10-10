@@ -53,10 +53,14 @@ export function NewTaskButton({ projectId, members }: NewTaskButtonProps) {
     setOpen(true);
   };
 
-  const handleClose = () => {
-    if (pending) return;
+  const closeModal = () => {
     setOpen(false);
     setError(null);
+  };
+
+  const handleClose = () => {
+    if (pending) return;
+    closeModal();
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -98,7 +102,7 @@ export function NewTaskButton({ projectId, members }: NewTaskButtonProps) {
     }
 
     setForm(INITIAL_FORM_STATE);
-    handleClose();
+    closeModal();
     startTransition(() => {
       router.refresh();
     });

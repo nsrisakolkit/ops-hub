@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 224 52% 7%;
+  --foreground: 210 40% 96%;
+  --muted: 224 32% 16%;
+  --muted-foreground: 215 20% 70%;
+  --accent: 222 89% 70%;
+  --accent-foreground: 210 40% 98%;
+  --primary: 204 94% 68%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 267 83% 75%;
+  --secondary-foreground: 222 47% 12%;
+  --destructive: 0 82% 63%;
+  --destructive-foreground: 210 40% 98%;
+  --card: 224 40% 12%;
+  --card-foreground: 210 40% 96%;
+  --border: 225 36% 18%;
+  --input: 225 36% 18%;
+  --ring: 215 92% 60%;
+  --radius: 1.25rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.12), transparent 45%),
+      radial-gradient(circle at 80% 0%, rgba(147, 51, 234, 0.15), transparent 50%),
+      linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background-color: rgba(56, 189, 248, 0.35);
+    color: rgba(241, 245, 249, 1);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight text-slate-50;
+  }
+
+  p, span, label {
+    @apply text-slate-300/90;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply rounded-3xl border border-white/10 bg-slate-900/60 shadow-xl shadow-sky-500/5 backdrop-blur;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400;
+  }
+}

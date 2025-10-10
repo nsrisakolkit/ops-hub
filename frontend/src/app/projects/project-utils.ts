@@ -303,7 +303,53 @@ export function extractProjectDetail(payload: unknown): ProjectDetail | null {
 }
 
 export function extractTask(payload: unknown): ProjectTask | null {
-  return toTask(payload);
+  if (Array.isArray(payload)) {
+    for (const entry of payload) {
+      const task = toTask(entry);
+      if (task) {
+        return task;
+      }
+    }
+    return null;
+  }
+
+  const direct = toTask(payload);
+  if (direct) {
+    return direct;
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const record = payload as Record<string, unknown>;
+  const nestedSources: Array<unknown> = [];
+
+  if (record.data) {
+    nestedSources.push(record.data);
+  }
+
+  if (record.task) {
+    nestedSources.push(record.task);
+  }
+
+  for (const source of nestedSources) {
+    const task = extractTask(source);
+    if (task) {
+      return task;
+    }
+  }
+
+  if (Array.isArray(record.data)) {
+    for (const entry of record.data as unknown[]) {
+      const task = toTask(entry);
+      if (task) {
+        return task;
+      }
+    }
+  }
+
+  return null;
 }
 
 export function extractTaskDetail(payload: unknown): TaskDetail | null {
