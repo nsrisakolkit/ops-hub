@@ -4,6 +4,7 @@ import { UsersController } from './users.controller';
 import { AuthModule } from '../auth';
 
 @Module({
+  // Need AuthModule for JwtStrategy injection in UsersService
   imports: [AuthModule],
   controllers: [UsersController],
   providers: [UsersService],

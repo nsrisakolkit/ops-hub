@@ -15,12 +15,7 @@ import {
 import { Transform, TransformFnParams } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-// Define Role enum to match Prisma schema
-export enum Role {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
-  SUPER_ADMIN = 'SUPER_ADMIN',
-}
+import { Role } from '@prisma/client'; // Import Role enum from Prisma schema
 
 const lowerCaseTrim = ({ value }: TransformFnParams): string | undefined =>
   typeof value === 'string' ? value.toLowerCase().trim() : undefined;

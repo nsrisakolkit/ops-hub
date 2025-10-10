@@ -24,7 +24,7 @@ import {
   UserProjectMembershipDto,
   UserTaskDto,
 } from './users.dto';
-import { JwtAuthGuard, RolesGuard } from '../common/guards';
+import { JwtAuthGuard, RolesGuard, JwtPayload } from '../common/guards';
 import { Roles, CurrentUser } from '../common/decorators';
 import {
   ApiBearerAuth,
@@ -40,7 +40,8 @@ import {
   ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
-import { JwtPayload } from '../common/guards/jwt-auth.guard';
+
+import * as Guards from '../common/guards';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -231,7 +232,7 @@ export class UsersController {
   updatePassword(
     @Param('id') id: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
-    @CurrentUser() currentUser: JwtPayload,
+    @CurrentUser() currentUser: Guards.JwtPayload,
   ): Promise<UserResponseDto> {
     // Users can only update their own password, unless they're an admin
     if (
