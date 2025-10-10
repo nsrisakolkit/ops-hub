@@ -218,6 +218,48 @@ export class UpdateUserDto {
   isActive?: boolean;
 }
 
+export class UpdateOwnProfileDto {
+  @ApiPropertyOptional({
+    example: 'avery.chen@opshub.com',
+    description: 'Updated email address; must remain unique',
+  })
+  @IsOptional()
+  @IsEmail({}, { message: 'Please provide a valid email address' })
+  @Transform(lowerCaseTrim)
+  email?: string;
+
+  @ApiPropertyOptional({
+    example: 'Avery',
+    description: 'Updated first name',
+  })
+  @IsOptional()
+  @IsString({ message: 'First name must be a string' })
+  @MinLength(1, { message: 'First name cannot be empty' })
+  @MaxLength(50, { message: 'First name must not exceed 50 characters' })
+  @Transform(trimValue)
+  firstName?: string;
+
+  @ApiPropertyOptional({
+    example: 'Chen',
+    description: 'Updated last name',
+  })
+  @IsOptional()
+  @IsString({ message: 'Last name must be a string' })
+  @MinLength(1, { message: 'Last name cannot be empty' })
+  @MaxLength(50, { message: 'Last name must not exceed 50 characters' })
+  @Transform(trimValue)
+  lastName?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://cdn.opshub.com/avatars/avery.png',
+    description: 'Updated avatar URL',
+  })
+  @IsOptional()
+  @IsUrl({}, { message: 'Avatar must be a valid URL' })
+  @Transform(trimValue)
+  avatar?: string;
+}
+
 // Query DTO for filtering users with enhanced validation
 export class UserQueryDto {
   @ApiPropertyOptional({

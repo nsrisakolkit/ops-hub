@@ -16,6 +16,7 @@ import { UsersService } from './users.service';
 import {
   CreateUserDto,
   UpdateUserDto,
+  UpdateOwnProfileDto,
   UserQueryDto,
   UpdateUserStatusDto,
   UpdatePasswordDto,
@@ -112,6 +113,32 @@ export class UsersController {
   @ApiOkResponse({ type: UserResponseDto })
   getProfile(@CurrentUser('sub') userId: string): Promise<UserResponseDto> {
     return this.usersService.findOne(userId);
+  }
+
+  @Patch('me')
+  @ApiOperation({ summary: 'Update the current authenticated user profile' })
+  @ApiBody({
+    type: UpdateOwnProfileDto,
+    examples: {
+      updateProfile: {
+        summary: 'Update personal details',
+        value: {
+          email: 'avery.chen@opshub.com',
+          firstName: 'Avery',
+          lastName: 'Chen',
+          avatar: 'https://cdn.opshub.com/avatars/avery.png',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiBadRequestResponse({ description: 'Validation error' })
+  @ApiConflictResponse({ description: 'Email already exists' })
+  updateMyProfile(
+    @CurrentUser('sub') userId: string,
+    @Body() updateOwnProfileDto: UpdateOwnProfileDto,
+  ): Promise<UserResponseDto> {
+    return this.usersService.updateOwnProfile(userId, updateOwnProfileDto);
   }
 
   @Get(':id')

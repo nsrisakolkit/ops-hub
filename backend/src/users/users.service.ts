@@ -7,6 +7,7 @@ import { PrismaService } from '../database';
 import {
   CreateUserDto,
   UpdateUserDto,
+  UpdateOwnProfileDto,
   UserQueryDto,
   UserResponseDto,
   PaginatedUsersResponseDto,
@@ -158,6 +159,35 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: updateUserDto,
+      select: userSelect,
+    });
+  }
+
+  async updateOwnProfile(
+    id: string,
+    updateOwnProfileDto: UpdateOwnProfileDto,
+  ): Promise<UserResponseDto> {
+    const user = await this.findOne(id);
+
+    if (updateOwnProfileDto.email && updateOwnProfileDto.email !== user.email) {
+      const existingEmail = await this.prisma.user.findUnique({
+        where: { email: updateOwnProfileDto.email },
+        select: { id: true },
+      });
+
+      if (existingEmail) {
+        throw new ConflictException('Email already exists');
+      }
+    }
+
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        email: updateOwnProfileDto.email ?? undefined,
+        firstName: updateOwnProfileDto.firstName ?? undefined,
+        lastName: updateOwnProfileDto.lastName ?? undefined,
+        avatar: updateOwnProfileDto.avatar ?? undefined,
+      },
       select: userSelect,
     });
   }
