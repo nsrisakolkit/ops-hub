@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { FormEvent, useMemo, useState, useTransition } from 'react';
+import { FormEvent, useEffect, useMemo, useState, useTransition } from 'react';
 import { deleteTask, updateTask, type UpdateTaskResult } from '../projects/project-api';
 import type { ProjectMember, TaskDetail } from '../projects/types';
 import { TASK_PRIORITIES, TASK_STATUSES } from '../projects/types';
+import { formatDate, formatDateTime } from '../projects/project-utils';
 
 interface TaskDetailClientProps {
   task: TaskDetail;
@@ -55,6 +56,26 @@ function toDateInputValue(value: string | null): string {
   }
 }
 
+function taskAssigneeName(detail: TaskDetail): string {
+  const assignee = detail.assignee;
+  if (!assignee) return 'Unassigned';
+  const fullName = [assignee.firstName, assignee.lastName].filter(Boolean).join(' ').trim();
+  if (fullName) return fullName;
+  if (assignee.username) return assignee.username;
+  if (assignee.email) return assignee.email ?? assignee.id;
+  return assignee.id;
+}
+
+function taskCreatorName(detail: TaskDetail): string {
+  const creator = detail.creator;
+  if (!creator) return 'Unknown';
+  const fullName = [creator.firstName, creator.lastName].filter(Boolean).join(' ').trim();
+  if (fullName) return fullName;
+  if (creator.username) return creator.username;
+  if (creator.email) return creator.email ?? creator.id;
+  return creator.id;
+}
+
 export function TaskDetailClient({
   task,
   members,
@@ -64,6 +85,7 @@ export function TaskDetailClient({
 }: TaskDetailClientProps) {
   const router = useRouter();
   const [isRefreshing, startRefresh] = useTransition();
+  const [editOpen, setEditOpen] = useState(false);
 
   const initialForm = useMemo<FormState>(
     () => ({
@@ -80,15 +102,34 @@ export function TaskDetailClient({
   const [form, setForm] = useState<FormState>(initialForm);
   const [updatePending, setUpdatePending] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
-  const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
 
   const [deletePending, setDeletePending] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  useEffect(() => {
+    setForm(initialForm);
+  }, [initialForm]);
+
+  const openEdit = () => {
+    setForm(initialForm);
+    setUpdateError(null);
+    setEditOpen(true);
+  };
+
+  const closeEdit = () => {
+    setEditOpen(false);
+    setForm(initialForm);
+    setUpdateError(null);
+  };
+
+  const handleCloseEdit = () => {
+    if (updatePending) return;
+    closeEdit();
+  };
+
   const resetForm = () => {
     setForm(initialForm);
     setUpdateError(null);
-    setUpdateSuccess(null);
   };
 
   const handleUpdate = async (event: FormEvent<HTMLFormElement>) => {
@@ -105,7 +146,6 @@ export function TaskDetailClient({
 
     setUpdatePending(true);
     setUpdateError(null);
-    setUpdateSuccess(null);
 
     const description = form.description.trim();
     const payload = {
@@ -131,7 +171,7 @@ export function TaskDetailClient({
       return;
     }
 
-    setUpdateSuccess('Task updated successfully.');
+    closeEdit();
     startRefresh(() => {
       router.refresh();
     });
@@ -183,140 +223,65 @@ export function TaskDetailClient({
         </dl>
         <dl className="space-y-2 text-sm text-slate-300/80">
           <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">Created</dt>
-          <dd className="text-slate-200">{new Date(task.createdAt).toLocaleString()}</dd>
+          <dd className="text-slate-200">{formatDateTime(task.createdAt)}</dd>
         </dl>
         <dl className="space-y-2 text-sm text-slate-300/80">
-          <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">Updated</dt>
-          <dd className="text-slate-200">{new Date(task.updatedAt).toLocaleString()}</dd>
+          <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">Last updated</dt>
+          <dd className="text-slate-200">{formatDateTime(task.updatedAt)}</dd>
         </dl>
       </section>
 
-      {canUpdate ? (
-        <section className="space-y-4 rounded-xl border border-white/10 bg-slate-950/60 p-6">
-          <header className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">Update task</h2>
+      <section className="space-y-5 rounded-xl border border-white/10 bg-slate-950/60 p-6">
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Task details</h2>
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+              Overview
+            </p>
+          </div>
+          {canUpdate ? (
             <button
               type="button"
-              onClick={resetForm}
-              className="text-xs font-medium text-slate-400 underline-offset-4 transition hover:text-white hover:underline"
-              disabled={updatePending || isRefreshing}
+              onClick={openEdit}
+              className="inline-flex items-center rounded-lg border border-sky-400/40 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-200 shadow shadow-sky-500/20 transition hover:bg-sky-500/20 hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-400/60"
             >
-              Reset
+              Edit task
             </button>
-          </header>
+          ) : null}
+        </header>
 
-          <form className="space-y-4" onSubmit={handleUpdate}>
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="text-sm text-slate-200">
-                <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Title</span>
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
-                  required
-                  disabled={updatePending || isRefreshing}
-                />
-              </label>
+        <div className="grid gap-4 md:grid-cols-2">
+          <dl className="space-y-1 text-sm text-slate-300/80">
+            <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">Status</dt>
+            <dd className="text-slate-100">{task.status.replace(/_/g, ' ')}</dd>
+          </dl>
+          <dl className="space-y-1 text-sm text-slate-300/80">
+            <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">Priority</dt>
+            <dd className="text-slate-100">{task.priority ?? '—'}</dd>
+          </dl>
+          <dl className="space-y-1 text-sm text-slate-300/80">
+            <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">Due date</dt>
+            <dd className="text-slate-100">{formatDate(task.dueDate ?? null)}</dd>
+          </dl>
+          <dl className="space-y-1 text-sm text-slate-300/80">
+            <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">Assignee</dt>
+            <dd className="text-slate-100">{taskAssigneeName(task)}</dd>
+          </dl>
+          <dl className="space-y-1 text-sm text-slate-300/80">
+            <dt className="text-xs uppercase tracking-[0.2em] text-slate-400">Created by</dt>
+            <dd className="text-slate-100">{taskCreatorName(task)}</dd>
+          </dl>
+        </div>
 
-              <label className="text-sm text-slate-200">
-                <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Assignee</span>
-                <select
-                  value={form.assigneeId}
-                  onChange={(event) => setForm((prev) => ({ ...prev, assigneeId: event.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
-                  disabled={updatePending || isRefreshing}
-                >
-                  <option value="">Unassigned</option>
-                  {members.map((member) => (
-                    <option key={member.userId} value={member.userId}>
-                      {memberLabel(member)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <label className="block text-sm text-slate-200">
-              <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Description</span>
-              <textarea
-                value={form.description}
-                onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
-                className="mt-1 h-28 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
-                placeholder="Add more context or acceptance criteria"
-                disabled={updatePending || isRefreshing}
-              />
-            </label>
-
-            <div className="grid gap-3 md:grid-cols-3">
-              <label className="text-sm text-slate-200">
-                <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Status</span>
-                <select
-                  value={form.status}
-                  onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
-                  disabled={updatePending || isRefreshing}
-                >
-                  {TASK_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {status.replace(/_/g, ' ')}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="text-sm text-slate-200">
-                <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Priority</span>
-                <select
-                  value={form.priority}
-                  onChange={(event) => setForm((prev) => ({ ...prev, priority: event.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
-                  disabled={updatePending || isRefreshing}
-                >
-                  {TASK_PRIORITIES.map((priority) => (
-                    <option key={priority} value={priority}>
-                      {priority}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="text-sm text-slate-200">
-                <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Due date</span>
-                <input
-                  type="date"
-                  value={form.dueDate}
-                  onChange={(event) => setForm((prev) => ({ ...prev, dueDate: event.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
-                  disabled={updatePending || isRefreshing}
-                />
-              </label>
-            </div>
-
-            {updateError ? (
-              <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-                {updateError}
-              </p>
-            ) : null}
-
-            {updateSuccess ? (
-              <p className="rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-200">
-                {updateSuccess}
-              </p>
-            ) : null}
-
-            <div className="flex justify-end gap-3">
-              <button
-                type="submit"
-                disabled={updatePending || isRefreshing}
-                className="inline-flex items-center rounded-lg border border-sky-400/40 bg-sky-500/20 px-4 py-2 text-sm font-semibold text-white shadow shadow-sky-500/20 transition hover:bg-sky-500/30 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {updatePending || isRefreshing ? 'Saving…' : 'Save changes'}
-              </button>
-            </div>
-          </form>
-        </section>
-      ) : null}
+        <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Description</h3>
+          <p className="mt-2 text-sm text-slate-200">
+            {task.description?.trim()
+              ? task.description
+              : 'No description provided for this task.'}
+          </p>
+        </div>
+      </section>
 
       {canDelete ? (
         <section className="space-y-3 rounded-xl border border-red-500/30 bg-red-500/5 p-6">
@@ -340,6 +305,172 @@ export function TaskDetailClient({
             </p>
           ) : null}
         </section>
+      ) : null}
+
+      {canUpdate && editOpen ? (
+        <div
+          role="presentation"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 backdrop-blur"
+          onClick={handleCloseEdit}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-task-title"
+            className="w-full max-w-2xl rounded-xl border border-white/10 bg-slate-900/95 p-6 shadow-2xl shadow-sky-500/20"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="mb-4 flex items-start justify-between">
+              <div>
+                <h2 id="edit-task-title" className="text-lg font-semibold text-white">
+                  Edit task
+                </h2>
+                <p className="text-sm text-slate-300/80">Update scheduling, ownership, or metadata.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="text-xs font-medium text-slate-400 underline-offset-4 transition hover:text-white hover:underline disabled:opacity-60"
+                  disabled={updatePending || isRefreshing}
+                >
+                  Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloseEdit}
+                  className="rounded-full p-1 text-slate-400 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-400/50 disabled:opacity-60"
+                  aria-label="Close"
+                  disabled={updatePending}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    className="h-5 w-5"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            <form className="space-y-4" onSubmit={handleUpdate}>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="text-sm text-slate-200">
+                  <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Title</span>
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
+                    required
+                    disabled={updatePending || isRefreshing}
+                  />
+                </label>
+
+                <label className="text-sm text-slate-200">
+                  <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Assignee</span>
+                  <select
+                    value={form.assigneeId}
+                    onChange={(event) => setForm((prev) => ({ ...prev, assigneeId: event.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
+                    disabled={updatePending || isRefreshing}
+                  >
+                    <option value="">Unassigned</option>
+                    {members.map((member) => (
+                      <option key={member.userId} value={member.userId}>
+                        {memberLabel(member)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <label className="block text-sm text-slate-200">
+                <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Description</span>
+                <textarea
+                  value={form.description}
+                  onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+                  className="mt-1 h-28 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
+                  placeholder="Add more context or acceptance criteria"
+                  disabled={updatePending || isRefreshing}
+                />
+              </label>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="text-sm text-slate-200">
+                  <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Status</span>
+                  <select
+                    value={form.status}
+                    onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
+                    disabled={updatePending || isRefreshing}
+                  >
+                    {TASK_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status.replace(/_/g, ' ')}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-sm text-slate-200">
+                  <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Priority</span>
+                  <select
+                    value={form.priority}
+                    onChange={(event) => setForm((prev) => ({ ...prev, priority: event.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
+                    disabled={updatePending || isRefreshing}
+                  >
+                    {TASK_PRIORITIES.map((priority) => (
+                      <option key={priority} value={priority}>
+                        {priority}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-sm text-slate-200">
+                  <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Due date</span>
+                  <input
+                    type="date"
+                    value={form.dueDate}
+                    onChange={(event) => setForm((prev) => ({ ...prev, dueDate: event.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
+                    disabled={updatePending || isRefreshing}
+                  />
+                </label>
+              </div>
+
+              {updateError ? (
+                <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                  {updateError}
+                </p>
+              ) : null}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCloseEdit}
+                  className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-slate-400/50 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={updatePending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatePending || isRefreshing}
+                  className="rounded-lg border border-sky-400/40 bg-sky-500/20 px-4 py-2 text-sm font-semibold text-white shadow shadow-sky-500/20 transition hover:bg-sky-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {updatePending || isRefreshing ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       ) : null}
     </div>
   );
