@@ -19,6 +19,7 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import { CreateTaskDto, UpdateTaskDto, TaskQueryDto } from './tasks.dto';
 
@@ -34,6 +35,23 @@ export class TasksController {
   @ApiResponse({ status: 201, description: 'Task created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 404, description: 'Project or assignee not found' })
+  @ApiBody({
+    type: CreateTaskDto,
+    examples: {
+      backlogTask: {
+        summary: 'Create backlog task',
+        value: {
+          title: 'Design hero section',
+          description: 'Deliver desktop and mobile mockups for hero section',
+          status: 'TODO',
+          priority: 'HIGH',
+          projectId: 'c1234567-89ab-4cde-f012-3456789abcde',
+          assigneeId: 'c2234567-89ab-4cde-f012-3456789abcde',
+          dueDate: '2025-01-15T00:00:00.000Z',
+        },
+      },
+    },
+  })
   create(
     @Body() createTaskDto: CreateTaskDto,
     @CurrentUser('sub') userId: string,
@@ -114,6 +132,19 @@ export class TasksController {
   @ApiResponse({ status: 200, description: 'Task updated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 404, description: 'Task not found' })
+  @ApiBody({
+    type: UpdateTaskDto,
+    examples: {
+      progressUpdate: {
+        summary: 'Adjust task progress',
+        value: {
+          title: 'Design hero section v2',
+          status: 'IN_PROGRESS',
+          priority: 'MEDIUM',
+        },
+      },
+    },
+  })
   update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
     return this.tasksService.update(id, updateTaskDto);
   }
@@ -122,6 +153,24 @@ export class TasksController {
   @ApiOperation({ summary: 'Update task status' })
   @ApiResponse({ status: 200, description: 'Task status updated successfully' })
   @ApiResponse({ status: 404, description: 'Task not found' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['status'],
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'CANCELLED'],
+        },
+      },
+    },
+    examples: {
+      markInReview: {
+        summary: 'Move task to review',
+        value: { status: 'IN_REVIEW' },
+      },
+    },
+  })
   updateStatus(@Param('id') id: string, @Body('status') status: string) {
     return this.tasksService.updateTaskStatus(id, status);
   }
@@ -133,6 +182,29 @@ export class TasksController {
     description: 'Task assignment updated successfully',
   })
   @ApiResponse({ status: 404, description: 'Task or user not found' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        assigneeId: {
+          type: 'string',
+          format: 'uuid',
+          description: 'User id to assign; null to unassign',
+          nullable: true,
+        },
+      },
+    },
+    examples: {
+      assign: {
+        summary: 'Assign to teammate',
+        value: { assigneeId: 'c3234567-89ab-4cde-f012-3456789abcde' },
+      },
+      unassign: {
+        summary: 'Unassign task',
+        value: { assigneeId: null },
+      },
+    },
+  })
   assignTask(
     @Param('id') id: string,
     @Body('assigneeId') assigneeId: string | null,

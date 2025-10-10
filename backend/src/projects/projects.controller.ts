@@ -26,6 +26,7 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 
 @ApiTags('projects')
@@ -39,6 +40,19 @@ export class ProjectsController {
   @ApiOperation({ summary: 'Create a new project' })
   @ApiResponse({ status: 201, description: 'Project created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiBody({
+    type: CreateProjectDto,
+    examples: {
+      basic: {
+        summary: 'Basic project',
+        value: {
+          name: 'Marketing Site Refresh',
+          description: 'Redesign the marketing site ahead of launch',
+          status: 'ACTIVE',
+        },
+      },
+    },
+  })
   create(
     @Body() createProjectDto: CreateProjectDto,
     @CurrentUser('sub') userId: string,
@@ -71,6 +85,18 @@ export class ProjectsController {
   @ApiResponse({ status: 200, description: 'Project updated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 404, description: 'Project not found' })
+  @ApiBody({
+    type: UpdateProjectDto,
+    examples: {
+      statusChange: {
+        summary: 'Update description and status',
+        value: {
+          description: 'Align requirements with new stakeholder feedback',
+          status: 'INACTIVE',
+        },
+      },
+    },
+  })
   update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
     return this.projectsService.update(id, updateProjectDto);
   }
@@ -101,6 +127,18 @@ export class ProjectsController {
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 404, description: 'Project or user not found' })
   @ApiResponse({ status: 409, description: 'User is already a member' })
+  @ApiBody({
+    type: ProjectMemberDto,
+    examples: {
+      adminMember: {
+        summary: 'Add existing user as ADMIN',
+        value: {
+          userId: 'c1234567-89ab-4cde-f012-3456789abcde',
+          role: 'ADMIN',
+        },
+      },
+    },
+  })
   addMember(@Param('id') id: string, @Body() memberDto: ProjectMemberDto) {
     return this.projectsService.addMember(id, memberDto);
   }
@@ -113,6 +151,17 @@ export class ProjectsController {
     description: 'Invalid input data or cannot change last owner',
   })
   @ApiResponse({ status: 404, description: 'Project or member not found' })
+  @ApiBody({
+    type: UpdateProjectMemberDto,
+    examples: {
+      promoteViewer: {
+        summary: 'Change member role',
+        value: {
+          role: 'VIEWER',
+        },
+      },
+    },
+  })
   updateMemberRole(
     @Param('id') id: string,
     @Param('userId') userId: string,
