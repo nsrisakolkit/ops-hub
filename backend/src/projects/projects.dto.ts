@@ -107,7 +107,10 @@ export class ProjectQueryDto {
 
 // DTO for managing project members
 export class ProjectMemberDto {
-  @IsUUID(4, { message: 'User ID must be a valid UUID' })
+  @IsString({ message: 'User ID must be a string' })
+  @MinLength(3, { message: 'User ID must be at least 3 characters long' })
+  @MaxLength(40, { message: 'User ID must not exceed 40 characters' })
+  @Transform(({ value }) => value?.trim())
   userId: string;
 
   @IsOptional()
