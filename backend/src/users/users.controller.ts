@@ -266,6 +266,37 @@ export class UsersController {
     return this.usersService.findByUsername(username);
   }
 
+  @Patch('me/password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update password for current user' })
+  @ApiBody({
+    type: UpdatePasswordDto,
+    examples: {
+      rotateOwnPassword: {
+        summary: 'Change own password',
+        value: {
+          currentPassword: 'CurrentPass123!',
+          newPassword: 'Saf3rPass!789',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Password updated successfully',
+    type: UserResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'User not found or password invalid' })
+  updateMyPassword(
+    @CurrentUser('sub') userId: string,
+    @Body() updatePasswordDto: UpdatePasswordDto,
+  ): Promise<UserResponseDto> {
+    return this.usersService.updatePassword(
+      userId,
+      updatePasswordDto.currentPassword,
+      updatePasswordDto.newPassword,
+    );
+  }
+
   @Patch(':id/password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update a user password' })
