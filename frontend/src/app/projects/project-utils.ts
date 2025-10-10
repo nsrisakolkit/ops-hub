@@ -108,6 +108,12 @@ export function normaliseProjects(payload: unknown): Project[] {
     .filter((project): project is Project => Boolean(project));
 }
 
+export function normaliseTasks(payload: unknown): ProjectTask[] {
+  return extractArray(payload)
+    .map((entry) => toTask(entry))
+    .filter((task): task is ProjectTask => Boolean(task));
+}
+
 export function extractProject(payload: unknown): Project | null {
   const direct = toProject(payload);
   if (direct) {
