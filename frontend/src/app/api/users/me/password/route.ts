@@ -2,8 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { backendFetchWithAuth } from '@/lib/server/backend-fetch';
 import { clearAuthCookies, setAuthCookies } from '@/lib/server/auth-cookies';
 
-async function proxyWithAuth(request: NextRequest, init: RequestInit): Promise<NextResponse> {
-  const { response, tokens, clearTokens } = await backendFetchWithAuth(request, '/users/me', init);
+export async function PATCH(request: NextRequest) {
+  const body = await request.text();
+  const { response, tokens, clearTokens } = await backendFetchWithAuth(
+    request,
+    '/users/me/password',
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    },
+  );
 
   const payload = await response.json().catch(() => null);
   const outgoing = NextResponse.json(
@@ -18,17 +27,4 @@ async function proxyWithAuth(request: NextRequest, init: RequestInit): Promise<N
   }
 
   return outgoing;
-}
-
-export async function GET(request: NextRequest) {
-  return proxyWithAuth(request, { method: 'GET' });
-}
-
-export async function PATCH(request: NextRequest) {
-  const body = await request.text();
-  return proxyWithAuth(request, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body,
-  });
 }

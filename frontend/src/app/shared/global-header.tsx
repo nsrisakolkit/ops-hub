@@ -20,6 +20,7 @@ export function GlobalHeader() {
       <nav className="flex items-center gap-2">
         <NavLink href="/projects" label="Projects" />
         <NavLink href="/tasks" label="Tasks" />
+        <NavLink href="/account" label="Account" />
       </nav>
       <LogoutButton />
     </header>
