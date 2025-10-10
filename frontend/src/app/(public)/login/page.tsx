@@ -57,11 +57,16 @@ export default function LoginPage() {
         router.replace('/dashboard');
         router.refresh();
       } else {
-        const message =
-          (typeof result === 'string' && result) ||
-          result?.message ||
-          result?.error ||
-          'Authentication failed';
+        const message = (typeof result === 'string' && result) ||
+          (Array.isArray(result?.message)
+            ? result.message.join(', ')
+            : typeof result?.message === 'string'
+              ? result.message
+              : typeof result?.error === 'string'
+                ? result.error
+                : typeof result?.message === 'object' && result?.message !== null
+                  ? JSON.stringify(result.message)
+                  : 'Authentication failed');
         setErrorMessage(message);
       }
     } catch (error) {

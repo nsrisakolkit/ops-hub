@@ -39,15 +39,16 @@ function formatDate(value?: string | null) {
 }
 
 async function loadProjects(): Promise<ProjectEntity[]> {
-  const { data, ok } = await fetchFromBff<PaginatedProjectResponse>(
-    '/api/projects',
-  );
+  const { data, ok } = await fetchFromBff<
+    PaginatedProjectResponse | { statusCode?: number }
+  >('/api/projects');
 
-  if (!ok || !data) {
+  if (!ok || !data || typeof data !== 'object' || !('data' in data)) {
     return [];
   }
 
-  return data.data ?? [];
+  const payload = data as PaginatedProjectResponse;
+  return Array.isArray(payload.data) ? payload.data : [];
 }
 
 export default async function ProjectsPage() {

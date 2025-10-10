@@ -67,10 +67,14 @@ function formatDueDate(date?: string | null) {
 }
 
 async function loadTasks(): Promise<UserTask[]> {
-  const { data, ok } = await fetchFromBff<UserTask[]>('/api/users/me/tasks');
-  if (!ok || !data) {
+  const { data, ok } = await fetchFromBff<UserTask[] | { statusCode?: number }>(
+    '/api/users/me/tasks',
+  );
+
+  if (!ok || !Array.isArray(data)) {
     return [];
   }
+
   return data;
 }
 

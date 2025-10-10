@@ -34,20 +34,26 @@ function formatDate(value?: string | null) {
 }
 
 async function loadUserProjects(): Promise<UserProjectMembership[]> {
-  const { data, ok } = await fetchFromBff<UserProjectMembership[]>(
-    '/api/users/me/projects',
-  );
-  if (!ok || !data) {
+  const { data, ok } = await fetchFromBff<
+    UserProjectMembership[] | { statusCode?: number }
+  >('/api/users/me/projects');
+
+  if (!ok || !Array.isArray(data)) {
     return [];
   }
+
   return data;
 }
 
 async function loadUserTasks(): Promise<UserTask[]> {
-  const { data, ok } = await fetchFromBff<UserTask[]>('/api/users/me/tasks');
-  if (!ok || !data) {
+  const { data, ok } = await fetchFromBff<
+    UserTask[] | { statusCode?: number }
+  >('/api/users/me/tasks');
+
+  if (!ok || !Array.isArray(data)) {
     return [];
   }
+
   return data;
 }
 

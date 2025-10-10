@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { TenantSwitcher } from './tenant-switcher';
 import { navigation } from './sidebar';
 import { cn } from '@/lib/utils';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { TenantSwitcher } from './tenant-switcher';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 function formatDisplayName(
   user?: { firstName?: string | null; lastName?: string | null; username?: string },
@@ -30,7 +32,9 @@ function deriveInitials(
 
 export function Topbar() {
   const pathname = usePathname();
-  const { data: user } = useCurrentUser();
+  const router = useRouter();
+  const { data: user, refetch } = useCurrentUser();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const displayName = formatDisplayName({
     firstName: user?.firstName ?? undefined,
@@ -43,6 +47,21 @@ export function Topbar() {
     lastName: user?.lastName ?? undefined,
     username: user?.username,
   });
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      await refetch();
+      router.replace('/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout failed', error);
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/5 bg-slate-950/70 px-6 py-4 backdrop-blur lg:px-12">
@@ -116,6 +135,13 @@ export function Topbar() {
                 {user?.role ? user.role.replace(/_/g, ' ').toLowerCase() : 'team member'}
               </span>
             </div>
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="ml-2 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200 transition hover:border-white/30 hover:text-white disabled:opacity-60"
+            >
+              {isLoggingOut ? 'Signing out…' : 'Logout'}
+            </button>
           </div>
         </div>
       </div>

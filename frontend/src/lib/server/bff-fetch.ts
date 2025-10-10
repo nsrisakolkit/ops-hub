@@ -1,18 +1,18 @@
 import { cookies, headers } from 'next/headers';
 
-function resolveAppBaseUrl(): string {
+async function resolveAppBaseUrl(): Promise<string> {
   const envUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '');
   if (envUrl) {
     return envUrl;
   }
 
-  const incomingHeaders = headers();
+  const incomingHeaders = await headers();
   const host =
-    incomingHeaders.get('x-forwarded-host') ??
-    incomingHeaders.get('host') ??
+    incomingHeaders?.get('x-forwarded-host') ??
+    incomingHeaders?.get('host') ??
     'localhost:3000';
   const protocol =
-    incomingHeaders.get('x-forwarded-proto') ??
+    incomingHeaders?.get('x-forwarded-proto') ??
     (host.includes('localhost') ? 'http' : 'https');
 
   return `${protocol}://${host}`;
@@ -22,8 +22,8 @@ export async function fetchFromBff<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<{ data: T | null; ok: boolean; status: number }> {
-  const baseUrl = resolveAppBaseUrl();
-  const cookieStore = cookies();
+  const baseUrl = await resolveAppBaseUrl();
+  const cookieStore = await cookies();
   const cookieHeader = cookieStore
     .getAll()
     .map((cookie) => `${cookie.name}=${cookie.value}`)
