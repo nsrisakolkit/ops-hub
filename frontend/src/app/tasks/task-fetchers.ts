@@ -3,8 +3,28 @@ import { fetchWithCookies } from '../projects/project-fetchers';
 import { normaliseTasks } from '../projects/project-utils';
 import type { ProjectTask, ResponseEnvelope } from '../projects/types';
 
-export async function fetchMyTasks(): Promise<ProjectTask[]> {
-  const response = await fetchWithCookies('/api/tasks/my');
+export interface MyTaskFilters {
+  search?: string;
+  status?: string;
+  priority?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
+export async function fetchMyTasks(filters?: MyTaskFilters): Promise<ProjectTask[]> {
+  const query = new URLSearchParams();
+
+  if (filters) {
+    const { search, status, priority, sortBy, sortOrder } = filters;
+    if (search) query.set('search', search);
+    if (status) query.set('status', status.toUpperCase());
+    if (priority) query.set('priority', priority.toUpperCase());
+    if (sortBy) query.set('sortBy', sortBy);
+    if (sortOrder) query.set('sortOrder', sortOrder.toUpperCase());
+  }
+
+  const queryString = query.toString();
+  const response = await fetchWithCookies(`/api/tasks/my${queryString ? `?${queryString}` : ''}`);
 
   if (response.status === 401) {
     redirect('/login');
