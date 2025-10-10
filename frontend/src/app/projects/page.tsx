@@ -1,101 +1,9 @@
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import type { Project, ResponseEnvelope, MeResponse } from './types';
+import { normaliseProjects } from './project-utils';
 import { LogoutButton } from './logout-button';
-
-interface Project {
-  id: string;
-  name: string;
-  status: string;
-  createdAt: string;
-}
-
-interface ResponseEnvelope<T> {
-  data?: T;
-  message?: string;
-  statusCode?: number;
-  timestamp?: string;
-}
-
-interface MeResponse {
-  id?: string;
-  email?: string;
-  username?: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  role?: string;
-}
-
-function toProject(candidate: unknown): Project | null {
-  if (!candidate || typeof candidate !== 'object') {
-    return null;
-  }
-
-  const record = candidate as Record<string, unknown>;
-
-  if (typeof record.id === 'string' && typeof record.name === 'string') {
-    return {
-      id: record.id,
-      name: record.name,
-      status: typeof record.status === 'string' ? record.status : 'UNKNOWN',
-      createdAt: typeof record.createdAt === 'string'
-        ? record.createdAt
-        : typeof record.createdAt === 'number'
-          ? new Date(record.createdAt).toISOString()
-          : '',
-    } satisfies Project;
-  }
-
-  if (record.project && typeof record.project === 'object') {
-    const project = record.project as Record<string, unknown>;
-    if (typeof project.id === 'string' && typeof project.name === 'string') {
-      return {
-        id: project.id,
-        name: project.name,
-        status: typeof project.status === 'string' ? project.status : 'UNKNOWN',
-        createdAt: typeof project.createdAt === 'string'
-          ? project.createdAt
-          : typeof project.createdAt === 'number'
-            ? new Date(project.createdAt).toISOString()
-            : '',
-      } satisfies Project;
-    }
-  }
-
-  return null;
-}
-
-function normaliseProjects(payload: unknown): Project[] {
-  if (!payload || typeof payload !== 'object') {
-    return [];
-  }
-
-  const container = payload as Record<string, unknown>;
-
-  const extractArray = (): unknown[] => {
-    if (Array.isArray(container)) {
-      return container as unknown[];
-    }
-
-    if (Array.isArray(container.data)) {
-      return container.data as unknown[];
-    }
-
-    const nested = container.data;
-    if (
-      nested &&
-      typeof nested === 'object' &&
-      Array.isArray((nested as Record<string, unknown>).data)
-    ) {
-      return (nested as Record<string, unknown>).data as unknown[];
-    }
-
-    return [];
-  };
-
-  return extractArray()
-    .map((entry) => toProject(entry))
-    .filter((project): project is Project => Boolean(project));
-}
+import { NewProjectButton } from './new-project-button';
 
 function formatDate(value: string) {
   if (!value) {
@@ -142,7 +50,11 @@ async function fetchCurrentUser(): Promise<MeResponse | null> {
 
   const payload = await response.json().catch(() => null);
   const envelope = (payload ?? {}) as ResponseEnvelope<MeResponse>;
-  const data = envelope.data ?? (payload?.user as MeResponse | undefined);
+  const fallbackUser =
+    payload && typeof payload === 'object'
+      ? ((payload as Record<string, unknown>).user as MeResponse | undefined)
+      : undefined;
+  const data = envelope.data ?? fallbackUser;
   return data ?? null;
 }
 
@@ -158,9 +70,7 @@ async function fetchProjects(role?: string): Promise<Project[]> {
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const envelope = (payload ?? {}) as ResponseEnvelope<unknown> & {
-      error?: unknown;
-    };
+    const envelope = (payload ?? {}) as ResponseEnvelope<unknown>;
     const errorMessage =
       typeof envelope.error === 'string'
         ? envelope.error
@@ -190,13 +100,7 @@ export default async function ProjectsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            disabled
-            className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 opacity-60"
-          >
-            New Project (coming soon)
-          </button>
+          <NewProjectButton />
           <LogoutButton />
         </div>
       </header>
