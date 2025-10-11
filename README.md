@@ -1,13 +1,81 @@
 # Ops Hub - Project Management Platform
 
-**Getting started**
-1. `git clone <repository-url>`
-2. `cd ops-hub`
-3. `cp backend/.env.example backend/.env` (adjust secrets as needed)
-4. `docker compose up --build`
-5. Open http://localhost:3001
+## 🚀 Getting Started
+
+Follow these steps to set up and run **OpsHub** locally using Docker.
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/nsrisakolkit/ops-hub.git
+cd ops-hub
+```
+
+### 2. Configure environment variables
+Copy the example environment file and edit secrets as needed:
+
+- **PowerShell/Git Bash**
+  ```bash
+  cp backend/.env.example backend/.env
+  ```
+
+- **Windows cmd**
+  ```bat
+  copy backend\.env.example backend\.env
+  ```
+
+### 3. Build and start the containers
+```bash
+docker compose up --build
+```
+
+This command builds all images (backend, frontend, database, etc.) and starts them.
+
+Once everything is running:
+
+- **Frontend (main app):** [http://localhost:3000](http://localhost:3000)
+- **Backend API (optional):** [http://localhost:3001](http://localhost:3001)
+- **API Documentation:** [http://localhost:3001/docs](http://localhost:3001/docs)
+
+---
+
+## 🧱 Managing Containers
+
+### Stop the containers
+To gracefully stop all running services:
+```bash
+docker compose down
+```
+This shuts everything down **but keeps your data** (if volumes are defined).
+
+### Start again (without rebuilding)
+If you’ve already built once and just want to run the app again:
+```bash
+docker compose up
+```
+
+### Rebuild (after changing Dockerfiles or dependencies)
+If you modify code that affects the Docker image (e.g., package.json, Dockerfile), rebuild:
+```bash
+docker compose up --build
+```
+
+> 💡 **Tip:** During active dev, use `docker compose up` (without `--build`) for quick restarts. Rebuild only when dependencies or Dockerfiles change.
 
 The stack comes up with PostgreSQL, Redis, the NestJS backend, and the Next.js frontend. Press `Ctrl+C` to stop; use `docker compose down` to remove containers (volumes stay unless `--volumes` is passed).
+
+---
+
+## 🧩 Useful Commands
+
+| Action | Command |
+|--------|---------|
+| View logs | `docker compose logs -f` |
+| Stop all containers | `docker compose down` |
+| Restart everything | `docker compose down && docker compose up` |
+| Rebuild only one service | `docker compose build <service_name>` |
+| List running containers | `docker ps` |
+
+---
 
 ## Project Structure
 
@@ -19,23 +87,13 @@ ops-hub/
 └── package.json         # Workspace scripts for combined tasks
 ```
 
-## Quick Start
-
 ### Prerequisites
 - Docker & Docker Compose v2+
 - (Optional) Node.js 18+ if you want to run the apps outside Docker
 
-### One-Click Development Environment
+---
 
-`docker compose up --build` orchestrates Postgres, Redis, the NestJS API (`backend`), and the BFF-style Next.js frontend (`frontend`). On first run, dependencies are installed, Prisma migrations + seed execute, and both servers start in watch mode. Named volumes cache dependencies for faster restarts.
-
-Services will be available at:
-
-- Frontend (Next.js): http://localhost:3001
-- Backend (NestJS): http://localhost:3000
-- API docs (Swagger): http://localhost:3000/api
-- PostgreSQL: `localhost:5433`
-- Redis: `localhost:6379`
+## Running Outside Docker
 
 ### Available Scripts
 
@@ -50,8 +108,6 @@ Services will be available at:
 | `npm run docker:up` | Start the docker-compose stack in the background |
 | `npm run docker:down` | Stop and remove compose containers |
 | `npm run prisma:studio` | Open Prisma Studio against the running Postgres |
-
-### Running Outside Docker
 
 If you prefer to run the apps without Docker:
 
