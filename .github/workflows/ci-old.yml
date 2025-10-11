@@ -81,7 +81,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-      
+          
       redis:
         image: redis:7-alpine
         options: >-
@@ -101,10 +101,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
           
       - name: Install dependencies
         working-directory: ./backend
-        run: npm install --legacy-peer-deps
+        run: npm ci
         
       - name: Setup test environment
         working-directory: ./backend
@@ -124,50 +125,21 @@ jobs:
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-jwt-secret
           JWT_REFRESH_SECRET: test-jwt-refresh-secret
-        run: npm run test
-        
-      - name: Run test coverage
-        working-directory: ./backend
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/opshub_test
-          REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-jwt-secret
-          JWT_REFRESH_SECRET: test-jwt-refresh-secret
+          NODE_ENV: test
         run: npm run test:cov
+        
+      - name: Upload unit test coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage/lcov.info
+          flags: backend-unit
+          name: backend-unit-coverage
 
-  # Job 3: Frontend Unit Tests
-  frontend-unit-tests:
-    name: Frontend Unit Tests
+  # Job 3: Backend E2E Tests
+  backend-e2e-tests:
+    name: Backend E2E Tests
     runs-on: ubuntu-latest
     needs: lint
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm install --legacy-peer-deps
-        
-      - name: Run unit tests
-        working-directory: ./frontend
-        run: npm run test
-        
-      - name: Run test coverage
-        working-directory: ./frontend
-        run: npm run test:coverage
-
-  # Job 4: E2E Tests
-  e2e-tests:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    needs: [backend-unit-tests, frontend-unit-tests]
     
     services:
       postgres:
@@ -175,7 +147,7 @@ jobs:
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_USER: postgres
-          POSTGRES_DB: opshub_test
+          POSTGRES_DB: opshub_e2e
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -183,7 +155,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-      
+          
       redis:
         image: redis:7-alpine
         options: >-
@@ -203,100 +175,44 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
           
-      - name: Install backend dependencies
+      - name: Install dependencies
         working-directory: ./backend
-        run: npm install --legacy-peer-deps
+        run: npm ci
         
-      - name: Setup test environment
+      - name: Setup E2E environment
         working-directory: ./backend
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/opshub_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/opshub_e2e
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-jwt-secret
           JWT_REFRESH_SECRET: test-jwt-refresh-secret
         run: |
           npx prisma generate
           npx prisma db push
+          npm run db:seed
           
       - name: Run E2E tests
         working-directory: ./backend
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/opshub_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/opshub_e2e
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-jwt-secret
           JWT_REFRESH_SECRET: test-jwt-refresh-secret
+          NODE_ENV: test
         run: npm run test:e2e
+        
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: e2e-test-results
+          path: backend/test-results/
 
-  # Job 5: Build Backend
-  build-backend:
-    name: Build Backend
-    runs-on: ubuntu-latest
-    needs: [backend-unit-tests, e2e-tests]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        working-directory: ./backend
-        run: npm install --legacy-peer-deps
-        
-      - name: Generate Prisma client
-        working-directory: ./backend
-        run: npx prisma generate
-        
-      - name: Build backend
-        working-directory: ./backend
-        run: npm run build
-        
-      - name: Upload backend build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-build
-          path: backend/dist/
-
-  # Job 6: Build Frontend
-  build-frontend:
-    name: Build Frontend
-    runs-on: ubuntu-latest
-    needs: [frontend-unit-tests]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm install --legacy-peer-deps
-        
-      - name: Build frontend
-        working-directory: ./frontend
-        env:
-          SKIP_ENV_VALIDATION: true
-        run: npm run build
-        
-      - name: Upload frontend build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/.next/
-
-  # Job 7: Security Audit
-  security-audit:
-    name: Security Audit
+  # Job 4: Frontend Tests
+  frontend-tests:
+    name: Frontend Tests
     runs-on: ubuntu-latest
     needs: lint
     
@@ -309,41 +225,110 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
           
       - name: Install dependencies
-        run: |
-          cd backend && npm install --legacy-peer-deps
-          cd ../frontend && npm install --legacy-peer-deps
-        
-      - name: Run npm audit (backend)
-        working-directory: ./backend
-        run: npm audit --audit-level moderate || true
-        
-      - name: Run npm audit (frontend)
         working-directory: ./frontend
-        run: npm audit --audit-level moderate || true
+        run: npm ci
         
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm run test:ci
+        
+      - name: Upload frontend test coverage
+        uses: codecov/codecov-action@v3
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
+          file: ./frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
 
-  # Job 8: Docker Build
+  # Job 5: Build Applications
+  build:
+    name: Build Applications
+    runs-on: ubuntu-latest
+    needs: [backend-unit-tests, backend-e2e-tests, frontend-tests]
+    
+    strategy:
+      matrix:
+        app: [backend, frontend]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+          
+      - name: Install dependencies
+        working-directory: ./${{ matrix.app }}
+        run: npm ci
+        
+      - name: Generate Prisma client (backend only)
+        if: matrix.app == 'backend'
+        working-directory: ./backend
+        run: npx prisma generate
+        
+      - name: Build application
+        working-directory: ./${{ matrix.app }}
+        run: npm run build
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.app }}-build
+          path: |
+            ${{ matrix.app }}/dist/
+            ${{ matrix.app }}/.next/
+          retention-days: 1
+
+  # Job 6: Security Audit
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    strategy:
+      matrix:
+        app: [backend, frontend]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+          
+      - name: Install dependencies
+        working-directory: ./${{ matrix.app }}
+        run: npm ci
+        
+      - name: Run security audit
+        working-directory: ./${{ matrix.app }}
+        run: npm audit --audit-level=moderate
+        
+      - name: Run dependency check
+        working-directory: ./${{ matrix.app }}
+        run: npx audit-ci --moderate
+
+  # Job 7: Docker Build (Optional)
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend, security-audit]
-    if: github.event_name == 'push'
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
+    strategy:
+      matrix:
+        app: [backend, frontend]
+        
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -351,54 +336,90 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         
-      - name: Login to DockerHub
-        if: github.ref == 'refs/heads/main'
+      - name: Login to Docker Hub
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-        
-      - name: Build and push backend image
+          
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/ops-hub-${{ matrix.app }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          push: ${{ github.ref == 'refs/heads/main' }}
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/opshub-backend:latest
-            ${{ secrets.DOCKER_USERNAME }}/opshub-backend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-        
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          file: ./frontend/Dockerfile
-          push: ${{ github.ref == 'refs/heads/main' }}
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/opshub-frontend:latest
-            ${{ secrets.DOCKER_USERNAME }}/opshub-frontend:${{ github.sha }}
+          context: ./${{ matrix.app }}
+          push: ${{ github.event_name == 'push' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Job 9: Deploy (conditional)
-  deploy:
-    name: Deploy to Staging
+  # Job 8: Deployment (Production)
+  deploy-production:
+    name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: docker-build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: staging
+    needs: [build, security-audit, docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Deploy to staging
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: backend-build
+          path: ./backend/dist/
+          
+      - name: Download frontend artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-build
+          path: ./frontend/.next/
+          
+      - name: Deploy to production
         run: |
-          echo "Deploying to staging environment..."
-          echo "Docker images built and pushed successfully"
-          echo "Backend: ${{ secrets.DOCKER_USERNAME }}/opshub-backend:${{ github.sha }}"
-          echo "Frontend: ${{ secrets.DOCKER_USERNAME }}/opshub-frontend:${{ github.sha }}"
-          # Add actual deployment logic here
-          # ./scripts/deploy.sh deploy staging ${{ github.sha }}
+          echo "Deploying to production..."
+          # Add your deployment commands here
+          # Examples:
+          # - Deploy to AWS, Azure, GCP
+          # - Update Kubernetes manifests
+          # - Trigger deployment webhooks
+          # - Update environment variables
+          
+      - name: Health check
+        run: |
+          echo "Running health checks..."
+          # Add health check commands here
+          # curl -f https://your-app.com/health || exit 1
+
+  # Job 9: Notification
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: always()
+    
+    steps:
+      - name: Notify success
+        if: needs.deploy-production.result == 'success'
+        run: |
+          echo "✅ Deployment successful!"
+          # Add notification logic (Slack, Discord, Email, etc.)
+          
+      - name: Notify failure
+        if: needs.deploy-production.result == 'failure'
+        run: |
+          echo "❌ Deployment failed!"
+          # Add failure notification logic
