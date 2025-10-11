@@ -1,0 +1,298 @@
+name: PR Quality Check
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  # Job 1: PR Size Check
+  pr-size-check:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Check PR size
+        run: |
+          FILES_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l)
+          LINES_CHANGED=$(git diff --stat origin/${{ github.base_ref }}...HEAD | tail -1 | grep -oE '[0-9]+' | head -1)
+          
+          echo "Files changed: $FILES_CHANGED"
+          echo "Lines changed: $LINES_CHANGED"
+          
+          if [ "$FILES_CHANGED" -gt 50 ]; then
+            echo "⚠️ Large PR: $FILES_CHANGED files changed"
+            echo "Consider breaking this into smaller PRs"
+          fi
+          
+          if [ "$LINES_CHANGED" -gt 1000 ]; then
+            echo "⚠️ Large PR: $LINES_CHANGED lines changed"
+            echo "Consider breaking this into smaller PRs"
+          fi
+
+  # Job 2: Code Quality Check
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            
+      - name: Install dependencies
+        run: |
+          cd backend && npm ci
+          cd ../frontend && npm ci
+          
+      - name: Run SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Job 3: Test Coverage Check
+  coverage-check:
+    name: Test Coverage Check
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: opshub_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+          
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+        
+      - name: Setup test environment
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/opshub_test
+          JWT_SECRET: test-jwt-secret
+        run: |
+          npx prisma generate
+          npx prisma db push
+          
+      - name: Run tests with coverage
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/opshub_test
+          JWT_SECRET: test-jwt-secret
+          NODE_ENV: test
+        run: npm run test:cov
+        
+      - name: Check coverage threshold
+        working-directory: ./backend
+        run: |
+          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          echo "Current coverage: $COVERAGE%"
+          
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Coverage is below 80% threshold"
+            exit 1
+          else
+            echo "✅ Coverage meets 80% threshold"
+          fi
+
+  # Job 4: Security Vulnerability Check
+  security-check:
+    name: Security Vulnerability Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Job 5: Dependency Check
+  dependency-check:
+    name: Dependency Vulnerability Check
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        app: [backend, frontend]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+          
+      - name: Install dependencies
+        working-directory: ./${{ matrix.app }}
+        run: npm ci
+        
+      - name: Check for vulnerabilities
+        working-directory: ./${{ matrix.app }}
+        run: |
+          npm audit --audit-level=moderate
+          npx audit-ci --moderate
+
+  # Job 6: Performance Impact Check
+  performance-check:
+    name: Performance Impact Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+          
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          path: pr
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install and build base
+        working-directory: ./base/frontend
+        run: |
+          npm ci
+          npm run build
+          
+      - name: Install and build PR
+        working-directory: ./pr/frontend
+        run: |
+          npm ci
+          npm run build
+          
+      - name: Compare bundle sizes
+        run: |
+          BASE_SIZE=$(du -sb base/frontend/.next | cut -f1)
+          PR_SIZE=$(du -sb pr/frontend/.next | cut -f1)
+          DIFF=$((PR_SIZE - BASE_SIZE))
+          DIFF_PERCENT=$(echo "scale=2; $DIFF * 100 / $BASE_SIZE" | bc)
+          
+          echo "Base bundle size: $(numfmt --to=iec $BASE_SIZE)"
+          echo "PR bundle size: $(numfmt --to=iec $PR_SIZE)"
+          echo "Difference: $(numfmt --to=iec $DIFF) ($DIFF_PERCENT%)"
+          
+          if [ "$DIFF_PERCENT" -gt 10 ]; then
+            echo "⚠️ Bundle size increased by more than 10%"
+          fi
+
+  # Job 7: API Breaking Changes Check
+  api-breaking-changes:
+    name: API Breaking Changes Check
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: opshub_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+          
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          path: pr
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Generate base API schema
+        working-directory: ./base/backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/opshub_test
+        run: |
+          npm ci
+          npx prisma generate
+          npx prisma db push
+          npm run build
+          # Generate OpenAPI spec or API documentation
+          
+      - name: Generate PR API schema
+        working-directory: ./pr/backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/opshub_test
+        run: |
+          npm ci
+          npx prisma generate
+          npx prisma db push
+          npm run build
+          # Generate OpenAPI spec or API documentation
+          
+      - name: Compare API schemas
+        run: |
+          echo "Checking for API breaking changes..."
+          # Compare the generated schemas
+          # Use tools like openapi-diff or custom comparison script

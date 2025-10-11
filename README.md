@@ -1,6 +1,12 @@
 # Ops Hub - Project Management Platform
 
-## 🚀 Getting Started
+A comprehensive project management platform built with NestJS, Next.js, and modern DevOps practices.
+
+## 🚀 Quick Start
+
+For complete deployment and CI/CD setup, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+### Local Development
 
 Follow these steps to set up and run **OpsHub** locally using Docker.
 
@@ -35,6 +41,23 @@ Once everything is running:
 - **Frontend (main app):** [http://localhost:3000](http://localhost:3000)
 - **Backend API (optional):** [http://localhost:3001](http://localhost:3001)
 - **API Documentation:** [http://localhost:3001/docs](http://localhost:3001/docs)
+
+## 🚀 Production Deployment
+
+For production deployment, use the provided deployment scripts:
+
+### Linux/Mac
+```bash
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh deploy production
+```
+
+### Windows
+```powershell
+.\scripts\deploy.ps1 deploy production
+```
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment documentation.
 
 ---
 
