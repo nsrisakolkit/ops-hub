@@ -5,6 +5,12 @@ import { FormEvent, useMemo, useState, useTransition } from 'react';
 import { createTask } from './project-api';
 import type { ProjectMember } from './types';
 import { TASK_PRIORITIES, TASK_STATUSES } from './types';
+import {
+  currentDateInputValue,
+  dateInputToIso,
+  isDateBefore,
+  isValidDateInput,
+} from '../../lib/date-utils';
 
 interface TaskFormState {
   title: string;
@@ -46,6 +52,7 @@ export function NewTaskButton({ projectId, members }: NewTaskButtonProps) {
   const [isRefreshing, startTransition] = useTransition();
 
   const isSubmitDisabled = useMemo(() => pending || form.title.trim().length === 0, [pending, form.title]);
+  const minDueDate = currentDateInputValue();
 
   const handleOpen = () => {
     setForm(INITIAL_FORM_STATE);
@@ -73,10 +80,27 @@ export function NewTaskButton({ projectId, members }: NewTaskButtonProps) {
       return;
     }
 
+    if (form.dueDate) {
+      if (!isValidDateInput(form.dueDate)) {
+        setError('Please select a valid due date.');
+        return;
+      }
+
+      const today = currentDateInputValue();
+      if (isDateBefore(form.dueDate, today)) {
+        setError('Due date cannot be earlier than today.');
+        return;
+      }
+    }
+
+    const dueDateIso = form.dueDate ? dateInputToIso(form.dueDate) : null;
+    if (form.dueDate && !dueDateIso) {
+      setError('Please select a valid due date.');
+      return;
+    }
+
     setPending(true);
     setError(null);
-
-    const dueDateIso = form.dueDate ? new Date(`${form.dueDate}T00:00:00Z`).toISOString() : null;
 
     const result = await createTask({
       projectId,
@@ -274,6 +298,11 @@ export function NewTaskButton({ projectId, members }: NewTaskButtonProps) {
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, dueDate: event.target.value }))
                     }
+                    min={minDueDate}
+                    onFocus={(event) => {
+                      const target = event.currentTarget as HTMLInputElement & { showPicker?: () => void };
+                      target.showPicker?.();
+                    }}
                     className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
                   />
                 </div>

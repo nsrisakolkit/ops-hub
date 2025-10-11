@@ -6,6 +6,12 @@ import { deleteTask, updateTask, type UpdateTaskResult } from '../projects/proje
 import type { ProjectMember, TaskDetail } from '../projects/types';
 import { TASK_PRIORITIES, TASK_STATUSES } from '../projects/types';
 import { formatDate, formatDateTime } from '../projects/project-utils';
+import {
+  currentDateInputValue,
+  dateInputToIso,
+  isDateBefore,
+  isValidDateInput,
+} from '../../lib/date-utils';
 
 interface TaskDetailClientProps {
   task: TaskDetail;
@@ -109,6 +115,8 @@ export function TaskDetailClient({
     setForm(initialForm);
   }, [initialForm]);
 
+  const minDueDate = currentDateInputValue();
+
   const resetForm = () => {
     setForm(initialForm);
     setUpdateError(null);
@@ -126,6 +134,24 @@ export function TaskDetailClient({
       return;
     }
 
+    if (form.dueDate) {
+      if (!isValidDateInput(form.dueDate)) {
+        setUpdateError('Please select a valid due date.');
+        return;
+      }
+
+      if (form.dueDate !== initialForm.dueDate && isDateBefore(form.dueDate, minDueDate)) {
+        setUpdateError('Due date cannot be earlier than today.');
+        return;
+      }
+    }
+
+    const dueDateIso = form.dueDate ? dateInputToIso(form.dueDate) : undefined;
+    if (form.dueDate && !dueDateIso) {
+      setUpdateError('Please select a valid due date.');
+      return;
+    }
+
     setUpdatePending(true);
     setUpdateError(null);
 
@@ -136,7 +162,7 @@ export function TaskDetailClient({
       status: form.status,
       priority: form.priority,
       assigneeId: form.assigneeId ? form.assigneeId : null,
-      dueDate: form.dueDate ? new Date(`${form.dueDate}T00:00:00Z`).toISOString() : undefined,
+      dueDate: dueDateIso,
     };
 
     const result: UpdateTaskResult = await updateTask(task.id, payload);
@@ -298,6 +324,11 @@ export function TaskDetailClient({
                   type="date"
                   value={form.dueDate}
                   onChange={(event) => setForm((prev) => ({ ...prev, dueDate: event.target.value }))}
+                  min={minDueDate}
+                  onFocus={(event) => {
+                    const target = event.currentTarget as HTMLInputElement & { showPicker?: () => void };
+                    target.showPicker?.();
+                  }}
                   className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/40"
                   disabled={disableInputs}
                 />
