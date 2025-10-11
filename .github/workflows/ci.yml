@@ -31,18 +31,26 @@ jobs:
             
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm install --legacy-peer-deps
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
         
       - name: Install frontend dependencies
         working-directory: ./frontend
-        run: npm install --legacy-peer-deps
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
         
       - name: Lint backend
         working-directory: ./backend
+        env:
+          ESLINT_USE_FLAT_CONFIG: false
         run: npm run lint
         
       - name: Lint frontend
         working-directory: ./frontend
+        env:
+          ESLINT_USE_FLAT_CONFIG: false
         run: npm run lint
         
       - name: Format check backend
