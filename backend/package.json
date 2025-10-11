@@ -81,7 +81,9 @@
     "@types/passport-local": "^1.0.38",
     "@types/supertest": "^6.0.2",
     "@types/uuid": "^10.0.0",
-    "eslint": "^9.18.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
@@ -95,8 +97,7 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3",
-    "typescript-eslint": "^8.20.0"
+    "typescript": "^5.7.3"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
