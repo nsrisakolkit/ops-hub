@@ -91,8 +91,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /frontend/.vercel
 
 # Package manager lock files (allow root package.json but ignore nested ones)
-/backend/package-lock.json
-/frontend/package-lock.json
 /backend/yarn.lock
 /frontend/yarn.lock
 /backend/pnpm-lock.yaml
