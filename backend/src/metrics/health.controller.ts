@@ -9,6 +9,7 @@ import { Public } from '../common/decorators';
 
 @Controller()
 export class HealthController {
+  // HealthCheckService and PrismaHealthIndicator come from TerminusModule
   constructor(
     private health: HealthCheckService,
     private prismaHealth: PrismaHealthIndicator,
@@ -16,7 +17,9 @@ export class HealthController {
   ) {}
 
   @Get('health')
+  // Use Public() decorator to skip auth for health checks
   @Public()
+  // Decorator to structure health check response
   @HealthCheck()
   check() {
     return this.health.check([

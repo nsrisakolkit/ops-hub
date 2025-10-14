@@ -40,6 +40,11 @@ import { CacheModule } from './cache/cache.module';
   providers: [AppService],
 })
 export class AppModule implements NestModule {
+  // configure applies middleware that runs before controllers and guards (before expensive operations)
+  // Applies to ALL routes in your entire app
+  // RequestIdMiddleware - Generates a unique ID for each request (for tracing/correlation)
+  // RequestLoggerMiddleware - Logs incoming requests and responses
+  // forRoutes('*') - Applies to all routes; for specific routes use .forRoutes('path/*')
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(RequestIdMiddleware, RequestLoggerMiddleware).forRoutes('*');
   }

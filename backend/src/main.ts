@@ -73,7 +73,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('OpsHub API')
-    .setDescription('REST + GraphQL backend with Prisma, Redis, BullMQ')
+    .setDescription('REST backend with Prisma and Redis')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
