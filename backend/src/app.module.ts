@@ -1,4 +1,6 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -27,6 +29,25 @@ import { CacheModule } from './cache/cache.module';
     AppConfigModule,
     DatabaseModule.forRoot(),
 
+    // Rate limiting
+    ThrottlerModule.forRootAsync({
+      useFactory: () => ({
+        throttlers: [
+          {
+            name: 'short',
+            ttl: 1000,
+            limit: 3,
+          },
+          {
+            name: 'medium', 
+            ttl: 60000,
+            limit: 20,
+          },
+        ],
+        // storage: // Use your Redis instance if needed
+      }),
+    }),
+
     // Feature modules
     AuthModule,
     UsersModule,
@@ -37,7 +58,13 @@ import { CacheModule } from './cache/cache.module';
     CacheModule.forRootAsync(),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   // configure applies middleware that runs before controllers and guards (before expensive operations)
