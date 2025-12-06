@@ -7,11 +7,9 @@ async function main() {
   console.log('Starting database seed...');
 
   // Reset existing data to keep seeds idempotent
-  await prisma.file.deleteMany();
   await prisma.task.deleteMany();
   await prisma.projectMember.deleteMany();
   await prisma.project.deleteMany();
-  await prisma.webhook.deleteMany();
 
   // Hash password for all users
   const hashedPassword = await bcrypt.hash('password123', 10);

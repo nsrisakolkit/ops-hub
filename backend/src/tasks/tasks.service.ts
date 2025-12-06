@@ -90,11 +90,6 @@ export class TasksService {
             avatar: true,
           },
         },
-        _count: {
-          select: {
-            files: true,
-          },
-        },
       },
     });
 
@@ -209,11 +204,6 @@ export class TasksService {
               avatar: true,
             },
           },
-          _count: {
-            select: {
-              files: true,
-            },
-          },
         },
       }),
       this.prisma.task.count({ where }),
@@ -268,16 +258,6 @@ export class TasksService {
             firstName: true,
             lastName: true,
             avatar: true,
-          },
-        },
-        files: {
-          select: {
-            id: true,
-            originalName: true,
-            filename: true,
-            mimetype: true,
-            size: true,
-            createdAt: true,
           },
         },
       },
@@ -357,11 +337,6 @@ export class TasksService {
             firstName: true,
             lastName: true,
             avatar: true,
-          },
-        },
-        _count: {
-          select: {
-            files: true,
           },
         },
       },

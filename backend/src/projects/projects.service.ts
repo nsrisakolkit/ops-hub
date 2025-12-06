@@ -140,7 +140,6 @@ export class ProjectsService {
           _count: {
             select: {
               tasks: true,
-              files: true,
             },
           },
         },
@@ -198,26 +197,6 @@ export class ProjectsService {
             priority: true,
             dueDate: true,
             assignee: {
-              select: {
-                id: true,
-                username: true,
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        files: {
-          select: {
-            id: true,
-            filename: true,
-            size: true,
-            mimetype: true,
-            createdAt: true,
-            uploader: {
               select: {
                 id: true,
                 username: true,
