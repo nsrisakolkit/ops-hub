@@ -135,16 +135,6 @@ async function main() {
     ],
   });
 
-  // Create webhooks
-  await prisma.webhook.create({
-    data: {
-      name: 'GitHub Integration',
-      url: 'https://api.github.com/webhook',
-      events: ['push', 'pull_request', 'issues'],
-      creatorId: adminUser.id,
-    },
-  });
-
   console.log('Database seeded successfully!');
 }
 

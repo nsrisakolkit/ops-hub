@@ -20,19 +20,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-
-  // show projects that user is a member
-  // no relation needed because it is automatically implied
   projects    ProjectMember[]
   tasks       Task[]
   files       File[]
-  webhooks    Webhook[]
 
-  // need relation because User has more than one relation to Task
   assignedTasks Task[] @relation("TaskAssignee")
 
-  // map User schema to "users" table
   @@map("users")
 }
 
@@ -44,7 +37,6 @@ model Project {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
   members ProjectMember[]
   tasks   Task[]
   files   File[]
@@ -57,13 +49,11 @@ model ProjectMember {
   role      ProjectRole @default(MEMBER)
   joinedAt  DateTime    @default(now())
 
-  // Relations
   userId    String
 
-  // "onDelete: Cascade" means delete record when User is deleted
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([userId, projectId])
   @@map("project_members")
@@ -79,7 +69,6 @@ model Task {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  // Relations
   projectId  String
   project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   creatorId  String
@@ -100,7 +89,6 @@ model File {
   size        Int
   createdAt   DateTime @default(now())
 
-  // Relations
   uploaderId String
   uploader   User    @relation(fields: [uploaderId], references: [id])
   projectId  String?
@@ -109,23 +97,6 @@ model File {
   task       Task?   @relation(fields: [taskId], references: [id])
 
   @@map("files")
-}
-
-model Webhook {
-  id        String      @id @default(cuid())
-  name      String
-  url       String
-  secret    String?
-  events    String[]
-  isActive  Boolean     @default(true)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  // Relations
-  creatorId String
-  creator   User   @relation(fields: [creatorId], references: [id])
-
-  @@map("webhooks")
 }
 
 enum Role {
