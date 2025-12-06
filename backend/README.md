@@ -6,10 +6,8 @@ A comprehensive operations management platform built with NestJS, featuring proj
 
 - **Project Management**: Create and manage projects with team members
 - **Task Tracking**: Comprehensive task management with priorities and due dates
-- **File Management**: Upload and organize files with proper validation
 - **User Authentication**: JWT-based authentication with refresh tokens
 - **Role-based Access Control**: Fine-grained permissions system
-- **Real-time Updates**: WebSocket support for live updates
 - **Caching**: Redis-based caching for improved performance
 - **Health Checks**: Comprehensive monitoring and health endpoints
 - **Logging**: Structured logging with Pino
@@ -51,9 +49,8 @@ ops-hub/
 - **Framework**: NestJS
 - **Database**: PostgreSQL with Prisma ORM
 - **Cache**: Redis
-- **Queue**: BullMQ
 - **Authentication**: JWT with Passport
-- **API**: GraphQL (Apollo) + REST
+- **API**: REST
 - **Logging**: Pino
 - **Validation**: class-validator + class-transformer
 - **Documentation**: Swagger/OpenAPI

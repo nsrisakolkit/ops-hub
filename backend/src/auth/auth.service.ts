@@ -97,8 +97,6 @@ export class AuthService {
   }
 
   logout(userId: string): void {
-    // In a real app, you might want to blacklist the token
-    // For now, we'll just log the logout
     console.log(`User ${userId} logged out`);
   }
 
