@@ -227,8 +227,6 @@ Key environment variables:
 | `REDIS_URL` | Redis connection string | Optional |
 | `JWT_SECRET` | JWT signing secret | Required |
 | `JWT_EXPIRATION_TIME` | Access token expiry (seconds) | `3600` |
-| `UPLOAD_PATH` | File upload directory | `./uploads` |
-| `MAX_FILE_SIZE` | Max file size in bytes | `10485760` |
 
 ## 🤝 Contributing
 

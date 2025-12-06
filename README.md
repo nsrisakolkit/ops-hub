@@ -1,4 +1,26 @@
 # Ops Hub - Project Management Platform
+#### Video Demo: https://youtu.be/pYogxJw61VU
+
+#### Description:
+
+**Ops Hub** is a modern task and project management platform designed for teams to collaborate efficiently. Built with a robust full-stack architecture, it provides real-time project tracking, task management, and team collaboration features.
+
+**Tech Stack:**
+- **Backend**: NestJS with REST APIs
+- **Frontend**: Next.js 15 with App Router
+- **Database**: PostgreSQL with Prisma ORM
+- **Caching**: Redis for session management and data caching
+- **Authentication**: JWT-based with role-based access control
+
+##### Feature:
+- User Management - Register, login, and account management
+- Projects - Create, edit, and delete projects with team members
+- Tasks - Full task lifecycle management (create, edit, delete, assign)
+- Team Collaboration - Invite members and manage team roles
+- Access Control - Project owners can manage member permissions
+- Multiple Views - Switch between table and Kanban board views
+- API Documentation - Auto-generated Swagger/OpenAPI documentation
+
 
 ## 🚀 Getting Started
 
@@ -13,16 +35,6 @@ cd ops-hub
 ### 2. Configure environment variables
 Copy the example environment file and edit secrets as needed:
 
-- **PowerShell/Git Bash**
-  ```bash
-  cp backend/.env.example backend/.env
-  ```
-
-- **Windows cmd**
-  ```bat
-  copy backend\.env.example backend\.env
-  ```
-
 ### 3. Build and start the containers
 ```bash
 docker compose up --build
@@ -35,7 +47,7 @@ Once everything is running:
 - **Frontend (main app):** [http://localhost:3000](http://localhost:3000)
 - **Backend API (optional):** [http://localhost:3001](http://localhost:3001)
 - **API Documentation:** [http://localhost:3001/docs](http://localhost:3001/docs)
-
+(url may change if port number in setting changes)
 ---
 
 ## 🧱 Managing Containers
@@ -87,10 +99,6 @@ ops-hub/
 └── package.json         # Workspace scripts for combined tasks
 ```
 
-### Prerequisites
-- Docker & Docker Compose v2+
-- (Optional) Node.js 18+ if you want to run the apps outside Docker
-
 ---
 
 ## Running Outside Docker
@@ -118,48 +126,6 @@ If you prefer to run the apps without Docker:
 
 The frontend relies on BFF route handlers under `/app/api/*` that proxy requests to the backend and handle token refreshes. Set `BACKEND_API_URL` (e.g. `http://localhost:3000/api`) in `frontend/.env.local` when running outside Docker.
 
-## Backend (NestJS)
-
-Located in `./backend/` directory. Features:
-
-- **Authentication**: JWT-based auth with role-based access control
-- **Database**: PostgreSQL with Prisma ORM
-- **Caching**: Redis for session and data caching
-- **API Documentation**: Swagger/OpenAPI
-- **Validation**: Class-validator with custom pipes
-- **Logging**: Structured logging with Pino
-- **File Upload**: Multer integration
-- **Real-time**: WebSocket support for notifications
-- **Queue Processing**: Bull queues for background tasks
-
-### Backend Structure
-```
-backend/
-├── src/
-│   ├── auth/           # Authentication module
-│   ├── users/          # User management
-│   ├── projects/       # Project management
-│   ├── tasks/          # Task management
-│   ├── files/          # File upload/management
-│   ├── webhooks/       # Webhook handlers
-│   ├── common/         # Shared utilities
-│   ├── database/       # Database configuration
-│   └── main.ts         # Application entry point
-├── prisma/             # Database schema and migrations
-├── test/               # E2E tests
-└── Dockerfile          # Container configuration
-```
-
-## Frontend
-
-The frontend lives in `frontend/` and is a Next.js 15 App Router application with TypeScript and Tailwind CSS. All data access goes through internal `/app/api/*` route handlers (Backend-for-Frontend pattern) which proxy to the NestJS API, manage HttpOnly cookies for access/refresh tokens, and auto-refresh on 401 responses. UI routes default to server components; client components only where interactivity is required.
-
-## Contributing
-
-1. Create a feature branch from `main`
-2. Make your changes in the appropriate workspace (`backend/` or `frontend/`)
-3. Run tests: `npm run test`
-4. Submit a pull request
 
 ## License
 
